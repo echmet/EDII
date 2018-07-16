@@ -18,12 +18,17 @@ include_directories(${INCLUDE_DIRECTORIES}
 
 set(EDIICore_SRCS
     src/dataloader.cpp
-    src/dbusipcproxy.cpp
     src/ipcproxy.cpp
     src/localsocketconnectionhandler.cpp
     src/localsocketipcproxy.cpp
     src/main.cpp
     src/uiplugin.cpp)
+
+if (ECHMET_EDII_USE_DBUS)
+    set(EDIICore_SRCS
+        ${EDIICore_SRCS}
+        src/dbusipcproxy.cpp)
+endif ()
 
 set(EDIICore_LINK_LIBS
     Qt5::Core
