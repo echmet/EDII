@@ -1,0 +1,7 @@
+#ifndef ECHMET_EDII_IPC_COMMON_H
+#define ECHMET_EDII_IPC_COMMON_H
+
+static const int EDII_ABI_VERSION_MAJOR = 0;
+static const int EDII_ABI_VERSION_MINOR = 1;
+
+#endif // ECHMET_EDII_IPC_COMMON_H

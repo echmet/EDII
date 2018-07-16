@@ -1,0 +1,33 @@
+<!DOCTYPE node PUBLIC "-//freedesktop//DTD D-BUS Object Introspection 1.0//EN" "http://www.freedesktop.org/standards/dbus/1.0/introspect.dtd">
+<node>
+  <interface name="edii.loader">
+    <method name="loadData">
+      <arg name="formatTag" type="s" direction="in" />
+      <arg name="loadOption" type="i" direction="in" />
+      <arg name="pack" type="(bsa(sssssssa(dd)))" direction="out" />
+      <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="EDII::IPCQtDBus::DataPack" />
+    </method>
+    <method name="loadDataHint">
+      <arg name="formatTag" type="s" direction="in" />
+      <arg name="hint" type="s" direction="in" />
+      <arg name="loadOption" type="i" direction="in" />
+      <arg name="pack" type="(bsa(sssssssa(dd)))" direction="out" />
+      <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="EDII::IPCQtDBus::DataPack" />
+    </method>
+    <method name="loadDataFile">
+      <arg name="formatTag" type="s" direction="in" />
+      <arg name="filePath" type="s" direction="in" />
+      <arg name="loadOption" type="i" direction="in" />
+      <arg name="pack" type="(bsa(sssssssa(dd)))" direction="out" />
+      <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="EDII::IPCQtDBus::DataPack" />
+    </method>
+    <method name="supportedFileFormats">
+      <arg name="supportedFileFormats" type="a(sssa(s))" direction="out" />
+      <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="EDII::IPCQtDBus::SupportedFileFormatVec" />
+    </method>
+    <method name="abiVersion">
+      <arg name="abiVersion" type="(ii)" direction="out" />
+      <annotation name="org.qtproject.QtDBus.QtTypeName.Out0" value="EDII::IPCQtDBus::ABIVersion" />
+    </method>
+  </interface>
+</node>
