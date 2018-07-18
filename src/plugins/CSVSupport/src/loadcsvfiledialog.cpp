@@ -13,6 +13,7 @@ LoadCsvFileDialog::Parameters::Parameters() :
   decimalSeparator('\0'),
   xColumn(0),
   yColumn(0),
+  multipleYcols(false),
   xType(""),
   yType(""),
   xUnit(""),
@@ -26,6 +27,7 @@ LoadCsvFileDialog::Parameters::Parameters() :
 
 LoadCsvFileDialog::Parameters::Parameters(const QString &delimiter, const QChar &decimalSeparator,
                                           const int xColumn, const int yColumn,
+                                          const bool multipleYcols,
                                           const QString &xType, const QString &yType, const QString &xUnit, const QString &yUnit,
                                           const HeaderHandling header, const int linesToSkip,
                                           const bool readBom, const QString &encodingId) :
@@ -33,6 +35,7 @@ LoadCsvFileDialog::Parameters::Parameters(const QString &delimiter, const QChar 
   decimalSeparator(decimalSeparator),
   xColumn(xColumn),
   yColumn(yColumn),
+  multipleYcols(multipleYcols),
   xType(xType),
   yType(yType),
   xUnit(xUnit),
@@ -50,6 +53,7 @@ LoadCsvFileDialog::Parameters &LoadCsvFileDialog::Parameters::operator=(const Pa
   const_cast<QChar&>(decimalSeparator) = other.decimalSeparator;
   const_cast<int&>(xColumn) = other.xColumn;
   const_cast<int&>(yColumn) = other.yColumn;
+  const_cast<bool&>(multipleYcols) = other.multipleYcols;
   const_cast<QString&>(xType) = other.xType;
   const_cast<QString&>(yType) = other.yType;
   const_cast<QString&>(xUnit) = other.xUnit;
@@ -93,6 +97,9 @@ LoadCsvFileDialog::LoadCsvFileDialog(QWidget *parent) :
 
   connect(ui->qcbox_encoding, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this, &LoadCsvFileDialog::onEncodingChanged);
   connect(ui->qcbox_headerHandling, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this, &LoadCsvFileDialog::onHeaderHandlingChanged);
+  connect(ui->qcb_multipleYcols, &QCheckBox::clicked, this, &LoadCsvFileDialog::onMultipleYColsClicked);
+
+  onMultipleYColsClicked();
 }
 
 LoadCsvFileDialog::~LoadCsvFileDialog()
@@ -182,6 +189,7 @@ void LoadCsvFileDialog::onLoadClicked()
   m_parameters = Parameters(ui->qle_delimiter->text(),
                             ui->qcbox_decimalSeparator->currentData().toChar(),
                             ui->qspbox_xColumn->value(), ui->qspbox_yColumn->value(),
+                            ui->qcb_multipleYcols->checkState() == Qt::Checked,
                             ui->qle_xType->text(), ui->qle_yType->text(),
                             ui->qle_xUnit->text(), ui->qle_yUnit->text(),
                             h, linesToSkip,
@@ -189,6 +197,14 @@ void LoadCsvFileDialog::onLoadClicked()
                             item->data(Qt::UserRole + 1).toString());
 
   accept();
+}
+
+void LoadCsvFileDialog::onMultipleYColsClicked()
+{
+	const bool colsAdjustable = ui->qcb_multipleYcols->checkState() != Qt::Checked;
+
+	ui->qspbox_xColumn->setEnabled(colsAdjustable);
+	ui->qspbox_yColumn->setEnabled(colsAdjustable);
 }
 
 LoadCsvFileDialog::Parameters LoadCsvFileDialog::parameters() const

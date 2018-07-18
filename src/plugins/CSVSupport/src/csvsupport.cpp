@@ -54,50 +54,73 @@ public:
 CSVSupport *CSVSupport::s_me{nullptr};
 const Identifier CSVSupport::s_identifier{"Comma separated file format support", "CSV", "CSV", {"file", "clipboard"}};
 
-Data loadCsvData(const CsvFileLoader::Data &csvData, const QString &file, const LoadCsvFileDialog::Parameters &p)
+static
+void appendCsvData(std::vector<Data> &data, CsvFileLoader::DataPack &csvData, const QString &file, const LoadCsvFileDialog::Parameters &p)
 {
-  QString xType;
-  QString yType;
-  QString xUnit;
-  QString yUnit;
-  QString fileName;
-  QString dataID = QString::number(p.yColumn);
+  const size_t N = csvData.dataVec.size();
+  const std::string path = file.toStdString();
+  std::string xType;
+  std::vector<std::string> yTypes;
+  std::string xUnit;
+  std::string yUnit;
+  std::string fileName;
 
   switch (p.header) {
   case LoadCsvFileDialog::HeaderHandling::NO_HEADER:
-    xType = p.xType;
-    yType = p.yType;
-    xUnit = p.xUnit;
-    yUnit = p.yUnit;
+    xType = p.xType.toStdString();
+    yTypes.resize(N);
+    std::fill(yTypes.begin(), yTypes.end(), p.yType.toStdString());
+    xUnit = p.xUnit.toStdString();
+    yUnit = p.yUnit.toStdString();
     break;
   case LoadCsvFileDialog::HeaderHandling::HEADER_WITH_UNITS:
-    xType = csvData.xType;
-    yType = csvData.yType;
+    xType = csvData.xType.toStdString();
+    yTypes = [&]() {
+      std::vector<std::string> out;
+      for (auto &v : csvData.yTypes)
+        out.emplace_back(v.toStdString());
+      return out;
+    }();
     break;
   case LoadCsvFileDialog::HeaderHandling::HEADER_WITHOUT_UNITS:
-    xType = csvData.xType;
-    yType = csvData.yType;
-    xUnit = p.xUnit;
-    yUnit = p.yUnit;
+    xType = csvData.xType.toStdString();
+    yTypes = [&]() {
+      std::vector<std::string> out;
+      for (auto &v : csvData.yTypes)
+        out.emplace_back(v.toStdString());
+      return out;
+    }();
+    xUnit = p.xUnit.toStdString();
+    yUnit = p.yUnit.toStdString();
     break;
   }
 
   if (yUnit.length() > 0) {
     if (yUnit.at(yUnit.length() - 1) == '\n')
-      yUnit.chop(1);
+      yUnit.pop_back();
   }
 
   if (file.length() > 0)
-    fileName = QFileInfo(file).fileName();
+    fileName = QFileInfo(file).fileName().toStdString();
 
-  return Data{fileName.toStdString(),
-              dataID.toStdString(),
-              file.toStdString(),
-              xType.toStdString(),
-              yType.toStdString(),
-              xUnit.toStdString(),
-              yUnit.toStdString(),
-              std::move(csvData.data)};
+  for (size_t idx = 0; idx < N; idx++) {
+    Data d{fileName,
+           [&]() -> std::string {
+             if (N == 1)
+               return std::to_string(p.yColumn);
+             else
+               return std::to_string(idx + 2);
+           }(),
+           path,
+           xType,
+           yTypes.at(idx),
+           xUnit,
+           yUnit,
+           std::move(csvData.dataVec[idx])
+          };
+
+    data.emplace_back(std::move(d));
+  }
 }
 
 static
@@ -139,6 +162,7 @@ CsvFileLoader::Parameters makeCsvLoaderParameters(UIPlugin *plugin, LoadCsvFileT
 
     return CsvFileLoader::Parameters(delimiter, p.decimalSeparator,
                                      p.xColumn, p.yColumn,
+                                     p.multipleYcols,
                                      p.header != LoadCsvFileDialog::HeaderHandling::NO_HEADER,
                                      p.linesToSkip,
                                      p.encodingId, p.readBom);
@@ -203,13 +227,13 @@ std::vector<Data> CSVSupport::loadCsvFromClipboard()
     if (!readerParams.isValid)
       break;
 
-    CsvFileLoader::Data csvData = CsvFileLoader::readClipboard(m_uiPlugin, readerParams);
-    if (!csvData.isValid()) {
+    auto csvData = CsvFileLoader::readClipboard(m_uiPlugin, readerParams);
+    if (!csvData.valid) {
       readerParams = CsvFileLoader::Parameters();
       continue;
     }
 
-    retData.emplace_back(loadCsvData(csvData, QString(), dlg->dialog()->parameters()));
+    appendCsvData(retData, csvData, QString(), dlg->dialog()->parameters());
     break;
   }
 
@@ -246,13 +270,13 @@ std::vector<Data> CSVSupport::loadCsvFromFileInternal(const QStringList &files)
           break;
       }
 
-      CsvFileLoader::Data csvData = CsvFileLoader::readFile(m_uiPlugin, f, readerParams);
-      if (!csvData.isValid()) {
+      CsvFileLoader::DataPack csvData = CsvFileLoader::readFile(m_uiPlugin, f, readerParams);
+      if (!csvData.valid) {
         readerParams = CsvFileLoader::Parameters();
         continue;
       }
 
-      retData.emplace_back(loadCsvData(csvData, f, dlg->dialog()->parameters()));
+      appendCsvData(retData, csvData, f, dlg->dialog()->parameters());
       break;
     }
   }

@@ -25,6 +25,7 @@ public:
   public:
     Parameters(const QString &delimiter, const QChar &decimalSeparator,
                const int xColumn, const int yColumn,
+	       const bool multipleYcols,
                const QString &xType, const QString &yType, const QString &xUnit, const QString &yUnit,
                const HeaderHandling header, const int linesToSkip,
                const bool readBom, const QString &encodingId);
@@ -34,6 +35,7 @@ public:
     const QChar decimalSeparator;
     const int xColumn;
     const int yColumn;
+    const bool multipleYcols;
     const QString xType;
     const QString yType;
     const QString xUnit;
@@ -65,7 +67,7 @@ private slots:
   void onEncodingChanged(const int idx);
   void onHeaderHandlingChanged(const int idx);
   void onLoadClicked();
-
+  void onMultipleYColsClicked();
 };
 
 } // namespace plugin

@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>412</width>
-    <height>347</height>
+    <height>397</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -16,6 +16,26 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QGridLayout" name="gridLayout">
+     <item row="6" column="1">
+      <widget class="QLineEdit" name="qle_xType"/>
+     </item>
+     <item row="8" column="1">
+      <widget class="QComboBox" name="qcbox_encoding">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="0">
+      <widget class="QLabel" name="ql_yCaption">
+       <property name="text">
+        <string>Y axis type</string>
+       </property>
+      </widget>
+     </item>
      <item row="0" column="1" colspan="3">
       <widget class="QLineEdit" name="qle_delimiter">
        <property name="text">
@@ -33,13 +53,6 @@
      <item row="3" column="1" colspan="3">
       <widget class="QComboBox" name="qcbox_headerHandling"/>
      </item>
-     <item row="6" column="2">
-      <widget class="QLabel" name="ql_yUnit">
-       <property name="text">
-        <string>Y axis unit</string>
-       </property>
-      </widget>
-     </item>
      <item row="1" column="1" colspan="3">
       <widget class="QComboBox" name="qcbox_decimalSeparator"/>
      </item>
@@ -47,13 +60,6 @@
       <widget class="QLabel" name="ql_headerHandling">
        <property name="text">
         <string>Header handling</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="2">
-      <widget class="QLabel" name="ql_xUnit">
-       <property name="text">
-        <string>X axis unit</string>
        </property>
       </widget>
      </item>
@@ -67,13 +73,6 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="0">
-      <widget class="QLabel" name="ql_yCaption">
-       <property name="text">
-        <string>Y axis type</string>
-       </property>
-      </widget>
-     </item>
      <item row="0" column="0">
       <widget class="QLabel" name="ql_delimiter">
        <property name="toolTip">
@@ -84,13 +83,6 @@
        </property>
        <property name="text">
         <string>Delimiter</string>
-       </property>
-      </widget>
-     </item>
-     <item row="5" column="0">
-      <widget class="QLabel" name="ql_xType">
-       <property name="text">
-        <string>X axis type</string>
        </property>
       </widget>
      </item>
@@ -137,59 +129,6 @@
        </property>
       </widget>
      </item>
-     <item row="6" column="1">
-      <widget class="QLineEdit" name="qle_yType"/>
-     </item>
-     <item row="5" column="1">
-      <widget class="QLineEdit" name="qle_xType"/>
-     </item>
-     <item row="5" column="3">
-      <widget class="QLineEdit" name="qle_xUnit"/>
-     </item>
-     <item row="6" column="3">
-      <widget class="QLineEdit" name="qle_yUnit"/>
-     </item>
-     <item row="7" column="0">
-      <widget class="QLabel" name="ql_encodingCaption">
-       <property name="text">
-        <string>Encoding</string>
-       </property>
-      </widget>
-     </item>
-     <item row="7" column="1" colspan="3">
-      <layout class="QHBoxLayout" name="horizontalLayout_2">
-       <item>
-        <widget class="QComboBox" name="qcbox_encoding">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QCheckBox" name="qcb_bom">
-         <property name="text">
-          <string>Byte order mark</string>
-         </property>
-        </widget>
-       </item>
-      </layout>
-     </item>
      <item row="2" column="1" colspan="3">
       <widget class="QSpinBox" name="qspbox_linesToSkip">
        <property name="alignment">
@@ -206,7 +145,84 @@
        </property>
       </widget>
      </item>
+     <item row="8" column="3">
+      <widget class="QCheckBox" name="qcb_bom">
+       <property name="text">
+        <string>Byte order mark</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="2">
+      <widget class="QLabel" name="ql_xUnit">
+       <property name="text">
+        <string>X axis unit</string>
+       </property>
+      </widget>
+     </item>
+     <item row="6" column="3">
+      <widget class="QLineEdit" name="qle_xUnit"/>
+     </item>
+     <item row="6" column="0">
+      <widget class="QLabel" name="ql_xType">
+       <property name="text">
+        <string>X axis type</string>
+       </property>
+      </widget>
+     </item>
+     <item row="8" column="2">
+      <spacer name="horizontalSpacer">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
+     </item>
+     <item row="7" column="2">
+      <widget class="QLabel" name="ql_yUnit">
+       <property name="text">
+        <string>Y axis unit</string>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="0" colspan="4" alignment="Qt::AlignRight">
+      <widget class="QCheckBox" name="qcb_multipleYcols">
+       <property name="text">
+        <string>Multiple Y columns</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="3">
+      <widget class="QLineEdit" name="qle_yUnit"/>
+     </item>
+     <item row="8" column="0">
+      <widget class="QLabel" name="ql_encodingCaption">
+       <property name="text">
+        <string>Encoding</string>
+       </property>
+      </widget>
+     </item>
+     <item row="7" column="1">
+      <widget class="QLineEdit" name="qle_yType"/>
+     </item>
     </layout>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -244,8 +260,6 @@
   <tabstop>qle_delimiter</tabstop>
   <tabstop>qcbox_decimalSeparator</tabstop>
   <tabstop>qcbox_headerHandling</tabstop>
-  <tabstop>qcbox_encoding</tabstop>
-  <tabstop>qcb_bom</tabstop>
   <tabstop>qpb_load</tabstop>
   <tabstop>qpb_cancel</tabstop>
  </tabstops>
