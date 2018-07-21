@@ -4,6 +4,7 @@
 #include <QPointF>
 #include <QMap>
 #include <QVector>
+#include <cassert>
 
 class QTextStream;
 class UIPlugin;
