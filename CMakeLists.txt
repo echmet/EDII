@@ -4,6 +4,7 @@ project(EDII)
 
 if (WIN32)
     option(ECHMET_EDII_USE_DBUS "Use D-Bus interface for IPC" OFF)
+	option(ECHMET_EDII_FORCE_WINXP "Define target Windows version to Windows XP")
 else ()
     option(ECHMET_EDII_USE_DBUS "Use D-Bus interface for IPC" ON)
 endif ()
@@ -45,6 +46,9 @@ else()
     message(FATAL_ERROR "Platform not recognized or not supported")
 endif()
 
+if (ECHMET_EDII_FORCE_WINXP)
+    add_definitions("-D_WIN32_WINNT=0x0501")
+endif ()
 
 include_directories(${INCLUDE_DIRECTORIES}
                    "${CMAKE_CURRENT_SOURCE_DIR}/include")
