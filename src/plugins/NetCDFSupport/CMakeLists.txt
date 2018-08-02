@@ -31,7 +31,7 @@ include_directories("${Qt5Core_INCLUDE_DIRS}"
                     "${Qt5Widgets_INCLUDE_DIRS}"
                     "${LIBNETCDF_DIR}/include")
 
-link_directories("${LIBNETCDF_DIR}/lib")
+link_directories(${LINK_DIRECTORIES} "${LIBNETCDF_DIR}/lib")
 
 set(NetCDFSupport_LINK_LIBS
     Qt5::Core

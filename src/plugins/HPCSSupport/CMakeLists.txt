@@ -39,7 +39,7 @@ set(HPCSSupport_LINK_LIBS
 
 include_directories("${LIBHPCS_DIR}/include")
 
-link_directories("${LIBHPCS_DIR}/lib")
+link_directories(${LINK_DIRECTORIES} "${LIBHPCS_DIR}/lib")
 
 if (WIN32)
     set(HPCSSupport_LINK_LIBS
