@@ -2,6 +2,7 @@
 #include "loadchemstationdatadialog.h"
 
 #include <QFile>
+#include <QFileSystemModel>
 #include <QMessageBox>
 #include <plugins/pluginhelpers_p.h>
 #include <plugins/threadeddialog.h>
@@ -19,11 +20,11 @@ bool isDirectoryUsable(const QString &path)
 class LoadChemStationDataThreadedDialog : public ThreadedDialog<LoadChemStationDataDialog>
 {
 public:
-  LoadChemStationDataThreadedDialog(UIPlugin *plugin, const QString &path, const QSize &dlgSize) :
+  LoadChemStationDataThreadedDialog(UIPlugin *plugin, const QString &path, const QSize &dlgSize, QFileSystemModel *fsModel) :
     ThreadedDialog<LoadChemStationDataDialog>{
       plugin,
-      [this, plugin]() {
-        auto dlg = new LoadChemStationDataDialog{plugin};
+      [this, plugin, fsModel]() {
+        auto dlg = new LoadChemStationDataDialog{plugin, fsModel};
 
         if (isDirectoryUsable(this->m_path))
           dlg->expandToPath(this->m_path);
@@ -54,6 +55,7 @@ EDIIPlugin::~EDIIPlugin()
 
 HPCSSupport::HPCSSupport(UIPlugin *plugin) :
   m_uiPlugin{plugin},
+  m_fsModel{new QFileSystemModel()},
   m_defaultPathsToTry([]() {
     QStringList pathsToTry = { QDir::homePath() };
 
@@ -76,6 +78,7 @@ HPCSSupport::HPCSSupport(UIPlugin *plugin) :
 
 HPCSSupport::~HPCSSupport()
 {
+  delete m_fsModel;
 }
 
 std::string HPCSSupport::chemStationTypeToString(const ChemStationFileLoader::Type type)
@@ -150,7 +153,7 @@ HPCSSupport * HPCSSupport::instance(UIPlugin *plugin)
 LoadChemStationDataThreadedDialog * HPCSSupport::makeLoadDialog(const QString &path)
 {
   m_dlgSizeLock.lock();
-  auto dlg = new LoadChemStationDataThreadedDialog{m_uiPlugin, path, m_lastChemStationDlgSize};
+  auto dlg = new LoadChemStationDataThreadedDialog{m_uiPlugin, path, m_lastChemStationDlgSize, m_fsModel};
   m_dlgSizeLock.unlock();
 
   return dlg;

@@ -6,13 +6,13 @@
 #include "chemstationbatchloader.h"
 
 #include <QDialog>
-#include <QFileSystemModel>
 #include <QTreeView>
 #include <QTableView>
 #include <QSplitter>
 
 class ChemStationBatchLoadModel;
 class UIPlugin;
+class QFileSystemModel;
 
 namespace Ui {
 class LoadChemStationDataDialog;
@@ -45,7 +45,7 @@ public:
     const ChemStationBatchLoader::Filter filter;
   };
 
-  explicit LoadChemStationDataDialog(UIPlugin *plugin, QWidget *parent = nullptr);
+  explicit LoadChemStationDataDialog(UIPlugin *plugin, QFileSystemModel *fsModel, QWidget *parent = nullptr);
   ~LoadChemStationDataDialog();
   void expandToPath(const QString &path);
   LoadInfo loadInfo();

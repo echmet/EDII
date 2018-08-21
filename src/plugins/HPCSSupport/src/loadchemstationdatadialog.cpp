@@ -5,6 +5,7 @@
 
 #include <QDir>
 #include <QDirIterator>
+#include <QFileSystemModel>
 #include <QMessageBox>
 #include <QHeaderView>
 
@@ -36,16 +37,16 @@ LoadChemStationDataDialog::LoadInfo & LoadChemStationDataDialog::LoadInfo::opera
   return *this;
 }
 
-LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QWidget *parent) :
+LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QFileSystemModel *fsModel, QWidget *parent) :
   QDialog(parent),
   m_uiPlugin(plugin),
   ui(new Ui::LoadChemStationDataDialog),
-  m_loadInfo(LoadInfo(LoadingMode::SINGLE_FILE, ""))
+  m_loadInfo(LoadInfo(LoadingMode::SINGLE_FILE, "")),
+  m_fsModel(fsModel)
 {
   ui->setupUi(this);
 
   try {
-    m_fsModel = new QFileSystemModel(this);
     m_finfoModel = new ChemStationFileInfoModel(this);
     m_batchLoadModel = new ChemStationBatchLoadModel(this);
     qs_splitter = new QSplitter(Qt::Horizontal, this);

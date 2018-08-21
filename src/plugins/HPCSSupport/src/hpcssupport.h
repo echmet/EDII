@@ -9,6 +9,8 @@
 #include <QStringList>
 #include <QSize>
 
+class QFileSystemModel;
+
 namespace plugin {
 
 class LoadChemStationDataThreadedDialog;
@@ -43,6 +45,8 @@ private:
 
   QSize m_lastChemStationDlgSize;
   QString m_lastChemStationPath;
+
+  QFileSystemModel *m_fsModel;
 
   const QStringList m_defaultPathsToTry;
 
