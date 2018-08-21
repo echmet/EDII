@@ -41,8 +41,8 @@ LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QFileSyst
   QDialog(parent),
   m_uiPlugin(plugin),
   ui(new Ui::LoadChemStationDataDialog),
-  m_loadInfo(LoadInfo(LoadingMode::SINGLE_FILE, "")),
-  m_fsModel(fsModel)
+  m_fsModel(fsModel),
+  m_loadInfo(LoadInfo(LoadingMode::SINGLE_FILE, ""))
 {
   ui->setupUi(this);
 
@@ -80,7 +80,6 @@ LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QFileSyst
   qtrv_fileSystem->hideColumn(1);
   qtrv_fileSystem->hideColumn(2);
   qtrv_fileSystem->hideColumn(3);
-  qtrv_fileSystem->setAutoExpandDelay(0);
 
   qtbv_files->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
@@ -264,11 +263,6 @@ void LoadChemStationDataDialog::onClicked(const QModelIndex &index)
   }
 }
 
-void LoadChemStationDataDialog::onLayoutChanged()
-{
-  qtrv_fileSystem->scrollTo(qtrv_fileSystem->currentIndex());
-}
-
 void LoadChemStationDataDialog::onFilesDoubleClicked(const QModelIndex &index)
 {
   if (!index.isValid())
@@ -285,6 +279,15 @@ void LoadChemStationDataDialog::onFilesDoubleClicked(const QModelIndex &index)
     loadMultipleDirectories(index);
     break;
   }
+}
+
+void LoadChemStationDataDialog::onLayoutChanged()
+{
+  const bool anim = qtrv_fileSystem->isAnimated();
+
+  qtrv_fileSystem->setAnimated(false);
+  qtrv_fileSystem->scrollTo(qtrv_fileSystem->currentIndex());
+  qtrv_fileSystem->setAnimated(anim);
 }
 
 void LoadChemStationDataDialog::onLoadClicked(const bool clicked)
