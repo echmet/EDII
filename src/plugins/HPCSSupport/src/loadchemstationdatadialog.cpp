@@ -79,6 +79,7 @@ LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QWidget *
   qtrv_fileSystem->hideColumn(1);
   qtrv_fileSystem->hideColumn(2);
   qtrv_fileSystem->hideColumn(3);
+  qtrv_fileSystem->setAutoExpandDelay(0);
 
   qtbv_files->horizontalHeader()->setSectionResizeMode(QHeaderView::ResizeToContents);
 
@@ -91,6 +92,7 @@ LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QWidget *
   connect(ui->qpb_load, &QPushButton::clicked, this, &LoadChemStationDataDialog::onLoadClicked);
   connect(qtbv_files, &QTableView::doubleClicked, this, &LoadChemStationDataDialog::onFilesDoubleClicked);
   connect(ui->qcbox_loadingMode, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this, &LoadChemStationDataDialog::onLoadingModeActivated);
+  connect(m_fsModel, &QFileSystemModel::layoutChanged, this, &LoadChemStationDataDialog::onLayoutChanged);
 }
 
 LoadChemStationDataDialog::~LoadChemStationDataDialog()
@@ -134,21 +136,20 @@ QString LoadChemStationDataDialog::createFileType(const ChemStationFileLoader::T
 
 QString LoadChemStationDataDialog::createAdditionalInfo(const ChemStationFileLoader::Data &data)
 {
-  if (data.type == ChemStationFileLoader::Type::CE_DAD) {
+  if (data.type == ChemStationFileLoader::Type::CE_DAD)
     return QString("Measured: %1 nm / Reference %2 nm").arg(data.wavelengthMeasured.wavelength).arg(data.wavelengthReference.wavelength);
-  }
+
   return QString();
 }
 
 void LoadChemStationDataDialog::expandToPath(const QString &path)
 {
-  const QModelIndex &index = m_fsModel->index(path);
+  const QModelIndex index = m_fsModel->index(path);
 
   if (!index.isValid())
     return;
 
   qtrv_fileSystem->setCurrentIndex(index);
-  qtrv_fileSystem->scrollTo(index);
   onClicked(index);
 }
 
@@ -260,6 +261,11 @@ void LoadChemStationDataDialog::onClicked(const QModelIndex &index)
   default:
     break;
   }
+}
+
+void LoadChemStationDataDialog::onLayoutChanged()
+{
+  qtrv_fileSystem->scrollTo(qtrv_fileSystem->currentIndex());
 }
 
 void LoadChemStationDataDialog::onFilesDoubleClicked(const QModelIndex &index)

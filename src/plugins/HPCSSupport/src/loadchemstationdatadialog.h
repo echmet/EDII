@@ -82,6 +82,7 @@ signals:
 private slots:
   void onCancelClicked(const bool clicked);
   void onClicked(const QModelIndex &index);
+  void onLayoutChanged();
   void onFilesDoubleClicked(const QModelIndex &index);
   void onLoadClicked(const bool clicked);
   void onLoadingModeActivated();
