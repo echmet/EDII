@@ -58,6 +58,7 @@ private:
   void loadWholeDirectory(const QModelIndex &index);
   void multipleDirectoriesSelected();
   QString processFileName(const QVariant &fileNameVariant, bool &ok);
+  void scrollToIndex(const QModelIndex &index);
   void setBatchLoadModel(const ChemStationBatchLoader::CHSDataVec &common);
   void singleSelected(const QModelIndex &index);
   void wholeDirectorySelected(const QModelIndex &index);
@@ -82,8 +83,8 @@ signals:
 private slots:
   void onCancelClicked(const bool clicked);
   void onClicked(const QModelIndex &index);
-  void onLayoutChanged();
   void onFilesDoubleClicked(const QModelIndex &index);
+  void onLayoutChanged();
   void onLoadClicked(const bool clicked);
   void onLoadingModeActivated();
 

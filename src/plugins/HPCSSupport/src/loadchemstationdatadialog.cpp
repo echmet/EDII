@@ -92,7 +92,6 @@ LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QFileSyst
   connect(ui->qpb_load, &QPushButton::clicked, this, &LoadChemStationDataDialog::onLoadClicked);
   connect(qtbv_files, &QTableView::doubleClicked, this, &LoadChemStationDataDialog::onFilesDoubleClicked);
   connect(ui->qcbox_loadingMode, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this, &LoadChemStationDataDialog::onLoadingModeActivated);
-  connect(m_fsModel, &QFileSystemModel::layoutChanged, this, &LoadChemStationDataDialog::onLayoutChanged);
 }
 
 LoadChemStationDataDialog::~LoadChemStationDataDialog()
@@ -149,7 +148,10 @@ void LoadChemStationDataDialog::expandToPath(const QString &path)
   if (!index.isValid())
     return;
 
+  connect(m_fsModel, &QFileSystemModel::layoutChanged, this, &LoadChemStationDataDialog::onLayoutChanged);
+
   qtrv_fileSystem->setCurrentIndex(index);
+  scrollToIndex(index);
   onClicked(index);
 }
 
@@ -283,11 +285,7 @@ void LoadChemStationDataDialog::onFilesDoubleClicked(const QModelIndex &index)
 
 void LoadChemStationDataDialog::onLayoutChanged()
 {
-  const bool anim = qtrv_fileSystem->isAnimated();
-
-  qtrv_fileSystem->setAnimated(false);
-  qtrv_fileSystem->scrollTo(qtrv_fileSystem->currentIndex());
-  qtrv_fileSystem->setAnimated(anim);
+  scrollToIndex(qtrv_fileSystem->currentIndex());
 }
 
 void LoadChemStationDataDialog::onLoadClicked(const bool clicked)
@@ -341,6 +339,18 @@ QString LoadChemStationDataDialog::processFileName(const QVariant &fileNameVaria
 
   ok = true;
   return dir.absoluteFilePath(fileNameVariant.toString());
+}
+
+void LoadChemStationDataDialog::scrollToIndex(const QModelIndex &index)
+{
+  if (!index.isValid())
+    return;
+
+  const bool anim = qtrv_fileSystem->isAnimated();
+
+  qtrv_fileSystem->setAnimated(false);
+  qtrv_fileSystem->scrollTo(qtrv_fileSystem->currentIndex());
+  qtrv_fileSystem->setAnimated(anim);
 }
 
 void LoadChemStationDataDialog::setBatchLoadModel(const ChemStationBatchLoader::CHSDataVec &common)
