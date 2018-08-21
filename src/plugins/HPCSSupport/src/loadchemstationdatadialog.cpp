@@ -152,6 +152,8 @@ void LoadChemStationDataDialog::expandToPath(const QString &path)
 
   qtrv_fileSystem->setCurrentIndex(index);
   scrollToIndex(index);
+  if (qtrv_fileSystem->visualRect(index).isValid())
+    disconnect(m_fsModel, &QFileSystemModel::layoutChanged, this, &LoadChemStationDataDialog::onLayoutChanged);
   onClicked(index);
 }
 
@@ -286,6 +288,7 @@ void LoadChemStationDataDialog::onFilesDoubleClicked(const QModelIndex &index)
 void LoadChemStationDataDialog::onLayoutChanged()
 {
   scrollToIndex(qtrv_fileSystem->currentIndex());
+  disconnect(m_fsModel, &QFileSystemModel::layoutChanged, this, &LoadChemStationDataDialog::onLayoutChanged);
 }
 
 void LoadChemStationDataDialog::onLoadClicked(const bool clicked)
