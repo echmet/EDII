@@ -34,10 +34,10 @@ include_directories("${Qt5Core_INCLUDE_DIRS}"
 link_directories(${LINK_DIRECTORIES} "${LIBNETCDF_DIR}/lib")
 
 set(NetCDFSupport_LINK_LIBS
-    Qt5::Core
-    Qt5::Gui
-    Qt5::Widgets
-    netcdf)
+    PRIVATE Qt5::Core
+    PRIVATE Qt5::Gui
+    PRIVATE Qt5::Widgets
+    PRIVATE netcdf)
 
 add_library(NetCDFSupport SHARED ${NetCDFSupport_SRCS})
 set_target_properties(NetCDFSupport

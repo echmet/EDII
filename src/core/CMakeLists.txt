@@ -31,10 +31,10 @@ if (ECHMET_EDII_USE_DBUS)
 endif ()
 
 set(EDIICore_LINK_LIBS
-    Qt5::Core
-    Qt5::Gui
-    Qt5::Widgets
-    Qt5::Network)
+    PRIVATE Qt5::Core
+    PRIVATE Qt5::Gui
+    PRIVATE Qt5::Widgets
+    PRIVATE Qt5::Network)
 
 set(CMAKE_CXX_FLAGS
     ${CMAKE_CXX_FLAGS}

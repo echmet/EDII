@@ -32,10 +32,10 @@ set(CMAKE_CXX_FLAGS
     ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS})
 
 set(HPCSSupport_LINK_LIBS
-    Qt5::Core
-    Qt5::Gui
-    Qt5::Widgets
-    HPCS)
+    PRIVATE Qt5::Core
+    PRIVATE Qt5::Gui
+    PRIVATE Qt5::Widgets
+    PRIVATE HPCS)
 
 include_directories("${LIBHPCS_DIR}/include")
 
