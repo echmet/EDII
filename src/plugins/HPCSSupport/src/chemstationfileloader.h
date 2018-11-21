@@ -5,9 +5,12 @@
 #include <QPointF>
 #include <QString>
 #include <QVector>
-#include <libHPCS.h>
 
 class UIPlugin;
+
+class HPCS_Date;
+class HPCS_TVPair;
+class HPCS_Wavelength;
 
 class ChemStationFileLoader
 {
@@ -25,7 +28,7 @@ public:
   };
 
   struct Wavelength {
-    Wavelength(const struct HPCS_Wavelength w);
+    Wavelength(const struct HPCS_Wavelength &w);
     Wavelength();
 
     int wavelength;
@@ -66,7 +69,6 @@ private:
   static QDate HPCSDateToQDate(const struct HPCS_Date date);
   static QVector<QPointF> HPCSDataToQVector(const struct HPCS_TVPair *data, const size_t length);
   static QTime HPCSDateToQTime(const struct HPCS_Date date);
-  static Type HPCSTypeToType(const enum HPCS_FileType type);
   static Data load(UIPlugin *plugin, const QString &path, const bool fullFile, const bool reportErrors);
 };
 

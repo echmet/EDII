@@ -3,6 +3,40 @@
 #include <libHPCS.h>
 #include <plugins/threadeddialog.h>
 
+static
+ChemStationFileLoader::Type HPCSTypeToType(const enum HPCS_FileType type)
+{
+  switch (type) {
+  case HPCS_TYPE_CE_ANALOG:
+    return ChemStationFileLoader::Type::CE_ANALOG;
+    break;
+  case HPCS_TYPE_CE_CCD:
+    return ChemStationFileLoader::Type::CE_CCD;
+    break;
+  case HPCS_TYPE_CE_CURRENT:
+    return ChemStationFileLoader::Type::CE_CURRENT;
+    break;
+  case HPCS_TYPE_CE_DAD:
+    return ChemStationFileLoader::Type::CE_DAD;
+    break;
+  case HPCS_TYPE_CE_POWER:
+    return ChemStationFileLoader::Type::CE_POWER;
+    break;
+  case HPCS_TYPE_CE_PRESSURE:
+    return ChemStationFileLoader::Type::CE_PRESSURE;
+    break;
+  case HPCS_TYPE_CE_TEMPERATURE:
+    return ChemStationFileLoader::Type::CE_TEMPERATURE;
+    break;
+  case HPCS_TYPE_CE_VOLTAGE:
+    return ChemStationFileLoader::Type::CE_VOLTAGE;
+    break;
+  default:
+    return ChemStationFileLoader::Type::CE_UNKNOWN;
+    break;
+  }
+}
+
 ChemStationFileLoader::Data::Data(const struct HPCS_MeasuredData *mdata) :
   fileDescription(mdata->file_description),
   sampleInfo(mdata->sample_info),
@@ -55,7 +89,7 @@ ChemStationFileLoader::Data & ChemStationFileLoader::Data::operator=(const Data 
   return *this;
 }
 
-ChemStationFileLoader::Wavelength::Wavelength(const struct HPCS_Wavelength wl) :
+ChemStationFileLoader::Wavelength::Wavelength(const struct HPCS_Wavelength &wl) :
   wavelength(wl.wavelength),
   interval(wl.interval)
 {
@@ -96,39 +130,6 @@ QDate ChemStationFileLoader::HPCSDateToQDate(const struct HPCS_Date date)
 QTime ChemStationFileLoader::HPCSDateToQTime(const struct HPCS_Date date)
 {
   return QTime(date.hour, date.minute, date.second);
-}
-
-ChemStationFileLoader::Type ChemStationFileLoader::HPCSTypeToType(const enum HPCS_FileType type)
-{
-  switch (type) {
-  case HPCS_TYPE_CE_ANALOG:
-    return ChemStationFileLoader::Type::CE_ANALOG;
-    break;
-  case HPCS_TYPE_CE_CCD:
-    return ChemStationFileLoader::Type::CE_CCD;
-    break;
-  case HPCS_TYPE_CE_CURRENT:
-    return ChemStationFileLoader::Type::CE_CURRENT;
-    break;
-  case HPCS_TYPE_CE_DAD:
-    return ChemStationFileLoader::Type::CE_DAD;
-    break;
-  case HPCS_TYPE_CE_POWER:
-    return ChemStationFileLoader::Type::CE_POWER;
-    break;
-  case HPCS_TYPE_CE_PRESSURE:
-    return ChemStationFileLoader::Type::CE_PRESSURE;
-    break;
-  case HPCS_TYPE_CE_TEMPERATURE:
-    return ChemStationFileLoader::Type::CE_TEMPERATURE;
-    break;
-  case HPCS_TYPE_CE_VOLTAGE:
-    return ChemStationFileLoader::Type::CE_VOLTAGE;
-    break;
-  default:
-    return ChemStationFileLoader::Type::CE_UNKNOWN;
-    break;
-  }
 }
 
 ChemStationFileLoader::Data ChemStationFileLoader::load(UIPlugin *plugin, const QString &path, const bool fullFile, const bool reportErrors)
