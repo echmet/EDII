@@ -238,8 +238,14 @@ Data HPCSSupport::loadChemStationFileSingle(const QString &path)
   for (const auto &datapoint : chData.data)
     datapoints.emplace_back(std::make_tuple(datapoint.x(), datapoint.y()));
 
-  Data data{QFileInfo(path).fileName().toStdString(),
-            "",
+  Data data{QFileInfo{path}.fileName().toStdString(),
+            [](const ChemStationFileLoader::Wavelength &msr, const ChemStationFileLoader::Wavelength &ref) {
+	      std::string s = QString{"wl=%1,%2 ref=%3,%4"}.arg(msr.wavelength)
+			                                   .arg(msr.interval)
+							   .arg(ref.wavelength)
+							   .arg(ref.interval).toStdString();
+	      return s;
+	    }(chData.wavelengthMeasured, chData.wavelengthReference),
             path.toStdString(),
             "Time",
             chemStationTypeToString(chData.type),
