@@ -8,9 +8,9 @@
 
 class UIPlugin;
 
-class HPCS_Date;
-class HPCS_TVPair;
-class HPCS_Wavelength;
+struct HPCS_Date;
+struct HPCS_TVPair;
+struct HPCS_Wavelength;
 
 class ChemStationFileLoader
 {
