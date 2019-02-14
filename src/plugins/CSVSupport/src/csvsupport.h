@@ -8,7 +8,7 @@ class QStringList;
 
 namespace plugin {
 
-class LoadCsvFileDialog;
+class LoadCsvFileThreadedDialog;
 
 class CSVSUPPORTSHARED_EXPORT CSVSupport : public EDIIPlugin {
 public:
@@ -28,6 +28,7 @@ private:
   std::vector<Data> loadCsvFromFileInternal(const QStringList &files);
 
   UIPlugin *m_uiPlugin;
+  LoadCsvFileThreadedDialog *m_paramsDlg;
 
   static CSVSupport *s_me;
   static const Identifier s_identifier;

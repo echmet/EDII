@@ -55,12 +55,12 @@ template <typename DialogType>
 class ThreadedDialog : public ThreadedDialogBase
 {
 public:
-  typedef std::function<DialogType * ()> DispFunc;
-  typedef std::unique_ptr<ThreadedDialog<DialogType>> Ptr;
+  using DispFunc = std::function<DialogType * ()>;
 
   explicit ThreadedDialog(UIPlugin *plugin, const DispFunc &dispFunc) :
     ThreadedDialogBase{plugin},
-    m_dispFunc{dispFunc}
+    m_dispFunc{dispFunc},
+    m_dialog{nullptr}
   {}
 
   explicit ThreadedDialog(UIPlugin *plugin, DispFunc &&dispFunc) :
@@ -83,7 +83,8 @@ public:
 private:
   virtual void process() override
   {
-    m_dialog = m_dispFunc();
+    if (m_dialog == nullptr)
+      m_dialog = m_dispFunc();
     m_dlgRet = m_dialog->exec();
   }
 
@@ -143,7 +144,8 @@ public:
 private:
   virtual void process() override
   {
-    m_dialog = m_dispFunc();
+    if (m_dialog == nullptr)
+      m_dialog = m_dispFunc();
     m_dlgRet = m_dialog->exec();
   }
 

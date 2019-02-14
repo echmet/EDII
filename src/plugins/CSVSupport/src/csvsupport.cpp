@@ -124,12 +124,6 @@ void appendCsvData(std::vector<Data> &data, CsvFileLoader::DataPack &csvData, co
 }
 
 static
-LoadCsvFileThreadedDialog * makeCsvLoaderDialog(UIPlugin *plugin)
-{
-  return new LoadCsvFileThreadedDialog{plugin};
-}
-
-static
 CsvFileLoader::Parameters makeCsvLoaderParameters(UIPlugin *plugin, LoadCsvFileThreadedDialog *dlg)
 {
   while (true) {
@@ -176,10 +170,12 @@ EDIIPlugin::~EDIIPlugin()
 CSVSupport::CSVSupport(UIPlugin *plugin) :
   m_uiPlugin{plugin}
 {
+  m_paramsDlg = new LoadCsvFileThreadedDialog{m_uiPlugin};
 }
 
 CSVSupport::~CSVSupport()
 {
+  delete m_paramsDlg;
 }
 
 void CSVSupport::destroy()
@@ -220,10 +216,9 @@ std::vector<Data> CSVSupport::load(const int option)
 std::vector<Data> CSVSupport::loadCsvFromClipboard()
 {
   std::vector<Data> retData{};
-  auto dlg = makeCsvLoaderDialog(m_uiPlugin);
 
   while (true) {
-    CsvFileLoader::Parameters readerParams = makeCsvLoaderParameters(m_uiPlugin, dlg);
+    CsvFileLoader::Parameters readerParams = makeCsvLoaderParameters(m_uiPlugin, m_paramsDlg);
     if (!readerParams.isValid)
       break;
 
@@ -233,11 +228,10 @@ std::vector<Data> CSVSupport::loadCsvFromClipboard()
       continue;
     }
 
-    appendCsvData(retData, csvData, QString(), dlg->dialog()->parameters());
+    appendCsvData(retData, csvData, QString(), m_paramsDlg->dialog()->parameters());
     break;
   }
 
-  delete dlg;
   return retData;
 }
 
@@ -260,12 +254,11 @@ std::vector<Data> CSVSupport::loadCsvFromFileInternal(const QStringList &files)
 {
   std::vector<Data> retData;
   CsvFileLoader::Parameters readerParams;
-  auto dlg = makeCsvLoaderDialog(m_uiPlugin);
 
   for (const QString &f : files) {
     while (true) {
       if (!readerParams.isValid) {
-        readerParams = makeCsvLoaderParameters(m_uiPlugin, dlg);
+        readerParams = makeCsvLoaderParameters(m_uiPlugin, m_paramsDlg);
         if (!readerParams.isValid)
           break;
       }
@@ -276,12 +269,11 @@ std::vector<Data> CSVSupport::loadCsvFromFileInternal(const QStringList &files)
         continue;
       }
 
-      appendCsvData(retData, csvData, f, dlg->dialog()->parameters());
+      appendCsvData(retData, csvData, f, m_paramsDlg->dialog()->parameters());
       break;
     }
   }
 
-  delete dlg;
   return retData;
 }
 
