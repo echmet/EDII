@@ -77,6 +77,8 @@ public:
 
   DialogType * dialog()
   {
+    if (m_dialog == nullptr)
+      m_dialog = m_dispFunc();
     return m_dialog;
   }
 
