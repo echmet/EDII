@@ -51,7 +51,6 @@ public:
       plugin,
       [this]() {
         auto dlg = new PickDecimalPointDialog{this->m_name};
-        PluginHelpers::showWindowOnTop(dlg);
 
         return dlg;
       }
@@ -70,7 +69,6 @@ public:
       plugin,
       [this]() {
         auto dlg = new SelectChannelsDialog{this->m_availChans};
-        PluginHelpers::showWindowOnTop(dlg);
 
         return dlg;
       }
@@ -94,7 +92,6 @@ public:
         dlg->setNameFilter("ASC file (*.asc *.ASC)");
         dlg->setAcceptMode(QFileDialog::AcceptOpen);
         dlg->setFileMode(QFileDialog::ExistingFiles);
-        PluginHelpers::showWindowOnTop(dlg);
 
         return dlg;
       }

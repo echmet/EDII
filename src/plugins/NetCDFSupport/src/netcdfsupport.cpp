@@ -19,7 +19,6 @@ public:
         dlg->setNameFilter("NetCDF file (*.cdf *.CDF)");
         dlg->setAcceptMode(QFileDialog::AcceptOpen);
         dlg->setFileMode(QFileDialog::ExistingFiles);
-        PluginHelpers::showWindowOnTop(dlg);
 
         return dlg;
       }

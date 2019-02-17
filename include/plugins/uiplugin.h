@@ -13,6 +13,7 @@ public:
   static UIPlugin * instance();
 
 public slots:
+  virtual void createInstance(ThreadedDialogBase *disp);
   virtual void display(ThreadedDialogBase *disp);
 
 private:

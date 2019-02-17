@@ -15,8 +15,6 @@ public:
   static void showWindowOnTop(QWidget *widget)
   {
   #ifdef Q_OS_WIN
-    widget->show();
-
     HWND hWnd =(HWND)widget->winId();
     RECT rect;
 

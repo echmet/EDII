@@ -32,7 +32,6 @@ public:
         if (this->m_dlgSize.width() > 0 && m_dlgSize.height() > 0)
           dlg->resize(this->m_dlgSize);
 
-        PluginHelpers::showWindowOnTop(dlg);
         return dlg;
       },
     },

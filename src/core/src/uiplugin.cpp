@@ -20,6 +20,12 @@ UIPlugin::UIPlugin(QObject *parent) :
 {
 }
 
+void UIPlugin::createInstance(ThreadedDialogBase *disp)
+{
+  disp->initialize();
+  disp->m_barrier.wakeAll();
+}
+
 void UIPlugin::display(ThreadedDialogBase *disp)
 {
   disp->process();

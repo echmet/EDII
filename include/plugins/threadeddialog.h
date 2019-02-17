@@ -2,7 +2,9 @@
 #define ECHMET_EDII_THREADEDDIALOG_H
 
 #include "uiplugin.h"
+#include "pluginhelpers_p.h"
 
+#include <cassert>
 #include <functional>
 #include <memory>
 #include <QApplication>
@@ -11,6 +13,7 @@
 #include <QMetaMethod>
 #include <QMessageBox>
 #include <QThread>
+#include <QTimer>
 
 class ThreadedDialogBase
 {
@@ -21,6 +24,21 @@ public:
 
   virtual ~ThreadedDialogBase() {}
 
+  void create()
+  {
+    if (qApp->thread() == QThread::currentThread())
+      initialize();
+    else {
+      int mthIdx = m_plugin->metaObject()->indexOfMethod("createInstance(ThreadedDialogBase*)");
+      QMetaMethod mth = m_plugin->metaObject()->method(mthIdx);
+
+      m_lock.lock();
+      mth.invoke(m_plugin, Qt::QueuedConnection, Q_ARG(void *, this));
+      m_barrier.wait(&m_lock);
+      m_lock.unlock();
+    }
+  }
+  
   int execute()
   {
     if (qApp->thread() == QThread::currentThread()) {
@@ -40,6 +58,7 @@ public:
   }
 
 protected:
+  virtual void initialize() = 0;
   virtual void process() = 0;
 
   UIPlugin *const m_plugin;
@@ -48,6 +67,7 @@ protected:
   QMutex m_lock;
   QWaitCondition m_barrier;
 
+  friend void UIPlugin::createInstance(ThreadedDialogBase *);
   friend void UIPlugin::display(ThreadedDialogBase *);
 };
 
@@ -77,16 +97,21 @@ public:
 
   DialogType * dialog()
   {
-    if (m_dialog == nullptr)
-      m_dialog = m_dispFunc();
+    assert(m_dialog != nullptr);
     return m_dialog;
   }
 
 private:
-  virtual void process() override
+  virtual void initialize() override
   {
     if (m_dialog == nullptr)
       m_dialog = m_dispFunc();
+  }
+  
+  virtual void process() override
+  {
+    initialize();
+    QTimer::singleShot(0, [this]() { plugin::PluginHelpers::showWindowOnTop(this->m_dialog); });
     m_dlgRet = m_dialog->exec();
   }
 
@@ -144,10 +169,16 @@ public:
   }
 
 private:
-  virtual void process() override
+  virtual void initialize() override
   {
     if (m_dialog == nullptr)
       m_dialog = m_dispFunc();
+  }
+  
+  virtual void process() override
+  {
+    initialize();
+    QTimer::singleShot(0, [this]() { plugin::PluginHelpers::showWindowOnTop(this->m_dialog); });
     m_dlgRet = m_dialog->exec();
   }
 

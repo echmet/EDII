@@ -19,7 +19,6 @@ public:
 
         dlg->setAcceptMode(QFileDialog::AcceptOpen);
         dlg->setFileMode(QFileDialog::ExistingFiles);
-        PluginHelpers::showWindowOnTop(dlg);
 
         return dlg;
       }
@@ -44,7 +43,6 @@ public:
         for (const CsvFileLoader::Encoding &enc : CsvFileLoader::SUPPORTED_ENCODINGS)
           dlg->addEncoding(enc.name, enc.displayedName, enc.canHaveBom);
 
-        PluginHelpers::showWindowOnTop(dlg);
         return dlg;
       }
     }
