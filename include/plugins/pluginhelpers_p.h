@@ -20,7 +20,7 @@ public:
     if (firstDisplay) {
       auto dlg = qobject_cast<QDialog *>(widget);
       if (dlg != nullptr) {
-        QTimer::singleShot(1, [widget]() { widget->close(); });
+        QTimer::singleShot(50, [dlg]() { dlg->reject(); });
         dlg->exec();
       }
       firstDisplay = false;
@@ -41,7 +41,6 @@ public:
     widget->activateWindow();
 
     SetActiveWindow(hWnd);
-
   #else
     Q_UNUSED(widget)
     Q_UNUSED(firstDisplay)

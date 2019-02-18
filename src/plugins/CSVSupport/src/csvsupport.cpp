@@ -17,6 +17,7 @@ public:
       [this]() {
         auto dlg = new QFileDialog{nullptr, QObject::tr("Pick a text file"), this->m_path};
 
+        dlg->setNameFilters({"CSV file (*.csv *.CSV *.txt *.TXT)"});
         dlg->setAcceptMode(QFileDialog::AcceptOpen);
         dlg->setFileMode(QFileDialog::ExistingFiles);
 
@@ -236,10 +237,10 @@ std::vector<Data> CSVSupport::loadCsvFromClipboard()
 std::vector<Data> CSVSupport::loadCsvFromFile(const std::string &sourcePath)
 {
   QStringList files;
-  OpenFileThreadedDialog dlgWrap{m_uiPlugin,  QString::fromStdString(sourcePath)};
+  OpenFileThreadedDialog dlgWrap{m_uiPlugin, QString::fromUtf8(sourcePath.c_str())};
 
   if (dlgWrap.execute() != QDialog::Accepted)
-   return std::vector<Data>{};
+    return std::vector<Data>{};
 
   files = dlgWrap.dialog()->selectedFiles();
   if (files.length() < 1)
@@ -291,7 +292,7 @@ std::vector<Data> CSVSupport::loadPath(const std::string &path, const int option
 {
   switch (option) {
   case 0:
-    return loadCsvFromFileInternal(QStringList{QString::fromStdString(path)});
+    return loadCsvFromFileInternal(QStringList{QString::fromUtf8(path.c_str())});
   case 1:
     return loadCsvFromClipboard();
   default:

@@ -23,6 +23,9 @@ public:
     m_firstDisplay{true}
   {}
 
+  ThreadedDialogBase(const ThreadedDialogBase &other) = delete;
+  ThreadedDialogBase & operator=(const ThreadedDialogBase &other) = delete;
+
   virtual ~ThreadedDialogBase() {}
 
   void create()
@@ -91,6 +94,9 @@ public:
     m_dialog{nullptr}
   {}
 
+  ThreadedDialog(const ThreadedDialog &other) = delete;
+  ThreadedDialog & operator=(const ThreadedDialog &other) = delete;
+
   virtual ~ThreadedDialog() override
   {
     if (m_dialog != nullptr)
@@ -133,6 +139,9 @@ public:
     m_dispFunc{dispFunc},
     m_dialog{nullptr}
   {}
+
+  ThreadedDialog(const ThreadedDialog &other) = delete;
+  ThreadedDialog & operator=(const ThreadedDialog &other) = delete;
 
   virtual ~ThreadedDialog() override
   {
