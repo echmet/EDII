@@ -111,7 +111,7 @@ private:
   virtual void process() override
   {
     initialize();
-    QTimer::singleShot(0, [this]() { plugin::PluginHelpers::showWindowOnTop(this->m_dialog); });
+    plugin::PluginHelpers::showWindowOnTop(this->m_dialog);
     m_dlgRet = m_dialog->exec();
   }
 
@@ -178,7 +178,7 @@ private:
   virtual void process() override
   {
     initialize();
-    QTimer::singleShot(0, [this]() { plugin::PluginHelpers::showWindowOnTop(this->m_dialog); });
+    plugin::PluginHelpers::showWindowOnTop(this->m_dialog);
     m_dlgRet = m_dialog->exec();
   }
 
