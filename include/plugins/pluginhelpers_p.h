@@ -3,7 +3,8 @@
 
 #ifdef Q_OS_WIN
 #include <Windows.h>
-#include <QApplication>
+#include <QTimer>
+#include <QDialog>
 #else
 #endif // Q_OS_WIN
 
@@ -13,9 +14,18 @@ namespace plugin {
 
 class PluginHelpers {
 public:
-  static void showWindowOnTop(QWidget *widget)
+  static void showWindowOnTop(QWidget *widget, bool &firstDisplay)
   {
   #ifdef Q_OS_WIN
+    if (firstDisplay) {
+      auto dlg = qobject_cast<QDialog *>(widget);
+      if (dlg != nullptr) {
+        QTimer::singleShot(1, [widget]() { widget->close(); });
+        dlg->exec();
+      }
+      firstDisplay = false;
+    }
+
     RECT rect;
 
     HWND hWnd = (HWND)widget->winId();
@@ -26,13 +36,11 @@ public:
       return;
 
     SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-    qApp->processEvents();
-    SetWindowPos(hWnd, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-
     widget->raise();
     widget->show();
     widget->activateWindow();
-    qApp->processEvents();
+
+    SetActiveWindow(hWnd);
 
   #else
     Q_UNUSED(widget)

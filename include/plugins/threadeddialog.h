@@ -19,7 +19,8 @@ class ThreadedDialogBase
 {
 public:
   explicit ThreadedDialogBase(UIPlugin *plugin) :
-    m_plugin{plugin}
+    m_plugin{plugin},
+    m_firstDisplay{true}
   {}
 
   virtual ~ThreadedDialogBase() {}
@@ -63,6 +64,7 @@ protected:
 
   UIPlugin *const m_plugin;
   int m_dlgRet;
+  bool m_firstDisplay;
 
   QMutex m_lock;
   QWaitCondition m_barrier;
@@ -111,7 +113,7 @@ private:
   virtual void process() override
   {
     initialize();
-    plugin::PluginHelpers::showWindowOnTop(this->m_dialog);
+    plugin::PluginHelpers::showWindowOnTop(m_dialog, m_firstDisplay);
     m_dlgRet = m_dialog->exec();
   }
 
@@ -178,7 +180,7 @@ private:
   virtual void process() override
   {
     initialize();
-    plugin::PluginHelpers::showWindowOnTop(this->m_dialog);
+    plugin::PluginHelpers::showWindowOnTop(m_dialog, m_firstDisplay);
     m_dlgRet = m_dialog->exec();
   }
 
