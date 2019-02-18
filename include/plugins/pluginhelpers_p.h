@@ -44,6 +44,7 @@ public:
 
   #else
     Q_UNUSED(widget)
+    Q_UNUSED(firstDisplay)
   #endif // Q_OS_
   }
 };
