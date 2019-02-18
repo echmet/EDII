@@ -17,14 +17,7 @@ public:
   static void showWindowOnTop(QWidget *widget, bool &firstDisplay)
   {
   #ifdef Q_OS_WIN
-    if (firstDisplay) {
-      auto dlg = qobject_cast<QDialog *>(widget);
-      if (dlg != nullptr) {
-        QTimer::singleShot(50, [dlg]() { dlg->reject(); });
-        dlg->exec();
-      }
-      firstDisplay = false;
-    }
+    widget->show();
 
     RECT rect;
 
@@ -36,10 +29,6 @@ public:
       return;
 
     SetWindowPos(hWnd, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
-    widget->raise();
-    widget->show();
-    widget->activateWindow();
-
     SetActiveWindow(hWnd);
   #else
     Q_UNUSED(widget)
