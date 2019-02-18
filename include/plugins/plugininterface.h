@@ -14,6 +14,20 @@ namespace plugin {
  */
 class Data {
 public:
+  Data()
+  {
+  }
+
+  Data(std::string _name, std::string _dataId, std::string _path,
+       std::string _xDesc, std::string _yDesc, std::string _xUnit, std::string _yUnit,
+       std::vector<std::tuple<double, double>> _pts) noexcept :
+    name{std::move(_name)}, dataId{std::move(_dataId)}, path{std::move(_path)},
+    xDescription{std::move(_xDesc)}, yDescription{std::move(_yDesc)},
+    xUnit{std::move(_xUnit)}, yUnit{std::move(_yUnit)},
+    datapoints{std::move(_pts)}
+  {
+  }
+
   const std::string name;                                     /*!< Name of the source file */
   const std::string dataId;                                   /*!< Optional identifier of the data block */
   const std::string path;                                     /*!< Absolute path to the source file */
