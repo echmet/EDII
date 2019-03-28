@@ -37,6 +37,15 @@ ChemStationFileLoader::Type HPCSTypeToType(const enum HPCS_FileType type)
   }
 }
 
+static
+ChemStationFileLoader::Wavelength makeWavelength(const enum HPCS_FileType type, const struct HPCS_Wavelength &wl)
+{
+  if (type == HPCS_TYPE_CE_DAD)
+    return wl;
+  else
+    return {};
+}
+
 ChemStationFileLoader::Data::Data(const struct HPCS_MeasuredData *mdata) :
   fileDescription(mdata->file_description),
   sampleInfo(mdata->sample_info),
@@ -46,8 +55,8 @@ ChemStationFileLoader::Data::Data(const struct HPCS_MeasuredData *mdata) :
   methodName(mdata->method_name),
   chemstationRevision(mdata->cs_rev),
   samplingRate(mdata->sampling_rate),
-  wavelengthMeasured(Wavelength(mdata->dad_wavelength_msr)),
-  wavelengthReference(Wavelength(mdata->dad_wavelength_ref)),
+  wavelengthMeasured(makeWavelength(mdata->file_type, mdata->dad_wavelength_msr)),
+  wavelengthReference(makeWavelength(mdata->file_type, mdata->dad_wavelength_ref)),
   type(HPCSTypeToType(mdata->file_type)),
   yUnits(mdata->y_units),
   data(HPCSDataToQVector(mdata->data, mdata->data_count)),
