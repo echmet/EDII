@@ -47,6 +47,23 @@ LoadCsvFileDialog::Parameters::Parameters(const QString &delimiter, const QChar 
 {
 }
 
+LoadCsvFileDialog::Parameters::Parameters(const Parameters &other) :
+  delimiter(other.delimiter),
+  decimalSeparator(other.decimalSeparator),
+  xColumn(other.xColumn),
+  yColumn(other.yColumn),
+  multipleYcols(other.multipleYcols),
+  xType(other.xType),
+  yType(other.yType),
+  xUnit(other.xUnit),
+  yUnit(other.yUnit),
+  header(other.header),
+  linesToSkip(other.linesToSkip),
+  readBom(other.readBom),
+  encodingId(other.encodingId)
+{
+}
+
 LoadCsvFileDialog::Parameters &LoadCsvFileDialog::Parameters::operator=(const Parameters &other)
 {
   const_cast<QString&>(delimiter) = other.delimiter;
