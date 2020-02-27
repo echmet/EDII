@@ -4,6 +4,14 @@
 #include <exception>
 #include <QString>
 
+#ifdef WIN32
+#include <memory>
+
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif // WIN32
+
 #define NC_CHECK(ret, errMsg) if (ret) { nc_close(ncid); throw std::runtime_error{errMsg}; }
 
 namespace plugin {
@@ -13,6 +21,34 @@ static const char *detector_unit_name = "detector_unit";
 static const char *retention_unit_name = "retention_unit";
 static const char *ordinate_values_var = "ordinate_values";
 static const char *point_number_dim = "point_number";
+
+static
+std::unique_ptr<char> toNativeCodepage(const char *utf8_str)
+{
+  auto wcLen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8_str, -1, nullptr, 0);
+  if (wcLen == 0)
+    throw std::runtime_error{"Cannot convert file name to UTF-16 string"};
+
+  auto wstr = std::unique_ptr<wchar_t>(new wchar_t[wcLen]);
+  if (wstr == nullptr)
+    throw std::runtime_error{"Out of memory"};
+
+  wcLen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8_str, -1, wstr.get(), wcLen);
+  if (wcLen == 0)
+    throw std::runtime_error{"Cannot convert file name to UTF-16 string"};
+
+  BOOL dummy;
+  auto mbLen = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, wstr.get(), -1, nullptr, 0, NULL, &dummy);
+  if (mbLen == 0)
+    throw std::runtime_error{"Cannot convert file name to native codepage"};
+
+  auto natstr = std::unique_ptr<char>(new char[mbLen]);
+  mbLen = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, wstr.get(), -1, natstr.get(), mbLen, NULL, &dummy);
+  if (mbLen == 0)
+    throw std::runtime_error{"Cannot convert file name to native codepage"};
+
+  return natstr;
+}
 
 static
 std::string attributeToString(const int ncid, const int varid, const char *attrName, const size_t len)
@@ -47,7 +83,12 @@ NetCDFFileLoader::Data NetCDFFileLoader::load(const QString &path)
   std::string retentionUnit{};
   Scans scans{};
 
+#ifdef WIN32
+  auto natPath = toNativeCodepage(path.toUtf8().data());
+  ret = nc_open(natPath.get(), NC_NOWRITE, &ncid);
+#else
   ret = nc_open(path.toUtf8().data(), NC_NOWRITE, &ncid);
+#endif // WIN32
   if (ret)
     throw std::runtime_error{"Cannot open datafile"};
 
