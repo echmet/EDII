@@ -39,6 +39,7 @@ public:
   public:
     Data(const struct HPCS_MeasuredData *mdata);
     Data();
+    Data(const Data &other);
     bool isValid() const;
     Data & operator=(const Data &other);
 

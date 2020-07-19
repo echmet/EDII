@@ -71,6 +71,25 @@ ChemStationFileLoader::Data::Data() :
 {
 }
 
+ChemStationFileLoader::Data::Data(const Data &other) :
+  fileDescription(other.fileDescription),
+  sampleInfo(other.sampleInfo),
+  operatorName(other.operatorName),
+  date(other.date),
+  time(other.time),
+  methodName(other.methodName),
+  chemstationVersion(other.chemstationVersion),
+  chemstationRevision(other.chemstationRevision),
+  samplingRate(other.samplingRate),
+  wavelengthMeasured(other.wavelengthMeasured),
+  wavelengthReference(other.wavelengthReference),
+  type(other.type),
+  yUnits(other.yUnits),
+  data(other.data),
+  m_valid(other.m_valid)
+{
+}
+
 bool ChemStationFileLoader::Data::isValid() const
 {
   return m_valid;
