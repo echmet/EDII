@@ -22,6 +22,7 @@ static const char *retention_unit_name = "retention_unit";
 static const char *ordinate_values_var = "ordinate_values";
 static const char *point_number_dim = "point_number";
 
+#ifdef WIN32
 static
 std::unique_ptr<char> toNativeCodepage(const char *utf8_str)
 {
@@ -49,6 +50,7 @@ std::unique_ptr<char> toNativeCodepage(const char *utf8_str)
 
   return natstr;
 }
+#endif // WIN32
 
 static
 std::string attributeToString(const int ncid, const int varid, const char *attrName, const size_t len)
