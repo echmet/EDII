@@ -16,6 +16,11 @@ namespace IPCQtDBus {
 
 class Datapoint {
 public:
+  explicit Datapoint() :
+    x{0.0},
+    y{0.0}
+  {}
+
   double x;
   double y;
 
@@ -135,6 +140,11 @@ namespace IPCQtDBus {
 
 class DataPack {
 public:
+  explicit DataPack() :
+    success{false},
+    error{"Empty response"}
+  {}
+
   bool success;
   QString error;
   DataVec data;
