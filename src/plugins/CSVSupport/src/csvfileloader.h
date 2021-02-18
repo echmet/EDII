@@ -129,16 +129,19 @@ private:
                              QTextStream &stream, const QChar &delimiter, const QChar &decimalSeparator,
                              const int xColumn, const int yColumn,
                              const bool multipleYcols,
-                             const bool hasHeader, const int linesToSkip);
+                             const bool hasHeader, const int linesToSkip,
+			     const QString &fileName);
 
   static PointVecVec readStreamMulti(UIPlugin *uiPlugin,
                                      QStringList &&lines, const QChar &delimiter, const QChar &decimalSeparator,
-                                     const int columns, const int emptyLines, int linesRead);
+                                     const int columns, const int emptyLines, int linesRead,
+				     const QString &fileName);
 
   static PointVecVec readStreamSingle(UIPlugin *uiPlugin,
                                       QStringList &&lines, const QChar &delimiter, const QChar &decimalSeparator,
                                       const int xColumn, const int yColumn, const int highColumn,
-                                      const int emptyLines, int linesRead);
+                                      const int emptyLines, int linesRead,
+				      const QString &fileName);
 };
 
 } // namespace plugin

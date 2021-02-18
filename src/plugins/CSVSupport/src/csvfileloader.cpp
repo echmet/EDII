@@ -148,27 +148,29 @@ void sanitizeDecSep(QString &s, const QChar &sep)
 class MalformedCsvFileThreadedDialog : public ThreadedDialog<MalformedCsvFileDialog>
 {
 public:
-  MalformedCsvFileThreadedDialog(UIPlugin *plugin, const MalformedCsvFileDialog::Error err, const int lineNo, const QString &badLine) :
+  MalformedCsvFileThreadedDialog(UIPlugin *plugin, const MalformedCsvFileDialog::Error err, const int lineNo, const QString &fileName, const QString &badLine) :
     ThreadedDialog<MalformedCsvFileDialog>{
       plugin,
       [this]() {
-        return new MalformedCsvFileDialog{this->err, this->lineNo, this->badLine};
+        return new MalformedCsvFileDialog{this->err, this->lineNo, this->fileName, this->badLine};
       }
     },
     err{err},
     lineNo{lineNo},
+    fileName{fileName},
     badLine{badLine}
   {}
 
 private:
   const MalformedCsvFileDialog::Error err;
   const int lineNo;
+  const QString fileName;
   const QString badLine;
 };
 
-void showMalformedFileError(UIPlugin *uiPlugin, const MalformedCsvFileDialog::Error err, const int lineNo, const QString &badLine)
+void showMalformedFileError(UIPlugin *uiPlugin, const MalformedCsvFileDialog::Error err, const int lineNo, const QString &fileName, const QString &badLine)
 {
-  MalformedCsvFileThreadedDialog dlgWrap{uiPlugin, err, lineNo, badLine};
+  MalformedCsvFileThreadedDialog dlgWrap{uiPlugin, err, lineNo, fileName, badLine};
   dlgWrap.execute();
 }
 
@@ -181,7 +183,7 @@ CsvFileLoader::DataPack CsvFileLoader::readClipboard(UIPlugin *uiPlugin, const P
   stream.setString(&clipboardText);
 
   return readStream(uiPlugin, stream, params.delimiter, params.decimalSeparator, params.xColumn, params.yColumn,
-                    params.multipleYcols, params.hasHeader, params.linesToSkip);
+                    params.multipleYcols, params.hasHeader, params.linesToSkip, "<clipboard>");
 }
 
 CsvFileLoader::DataPack CsvFileLoader::readFile(UIPlugin *uiPlugin, const QString &path, const Parameters &params)
@@ -220,7 +222,7 @@ CsvFileLoader::DataPack CsvFileLoader::readFile(UIPlugin *uiPlugin, const QStrin
   stream.setCodec(params.encodingId.toUtf8());
 
   return readStream(uiPlugin, stream, params.delimiter, params.decimalSeparator, params.xColumn, params.yColumn,
-                    params.multipleYcols, params.hasHeader, params.linesToSkip);
+                    params.multipleYcols, params.hasHeader, params.linesToSkip, dataFile.fileName());
 
 }
 
@@ -228,7 +230,8 @@ CsvFileLoader::DataPack CsvFileLoader::readStream(UIPlugin *uiPlugin,
                                                   QTextStream &stream, const QChar &delimiter, const QChar &decimalSeparator,
                                                   const int xColumn, const int yColumn,
                                                   const bool multipleYcols,
-                                                  const bool hasHeader, const int linesToSkip)
+                                                  const bool hasHeader, const int linesToSkip,
+						  const QString &fileName)
 {
   PointVecVec ptsVecVec;
   QString xType;
@@ -273,9 +276,9 @@ CsvFileLoader::DataPack CsvFileLoader::readStream(UIPlugin *uiPlugin,
       xType = std::get<1>(header);
       yTypes = std::get<2>(header);
 
-      ptsVecVec = readStreamMulti(uiPlugin, std::move(lines), delimiter, decimalSeparator, columns, emptyLines, linesRead);
+      ptsVecVec = readStreamMulti(uiPlugin, std::move(lines), delimiter, decimalSeparator, columns, emptyLines, linesRead, fileName);
     } catch (const InvalidHeaderError &ex) {
-      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::POSSIBLY_INCORRECT_SETTINGS, linesRead, ex.line);
+      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::POSSIBLY_INCORRECT_SETTINGS, linesRead, fileName, ex.line);
 
       return {};
     }
@@ -285,13 +288,13 @@ CsvFileLoader::DataPack CsvFileLoader::readStream(UIPlugin *uiPlugin,
       xType = std::get<0>(header);
       yTypes = { std::get<1>(header) };
     } catch (const InvalidHeaderError &ex) {
-      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::POSSIBLY_INCORRECT_SETTINGS, linesRead, ex.line);
+      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::POSSIBLY_INCORRECT_SETTINGS, linesRead, fileName, ex.line);
 
       return {};
     }
 
     ptsVecVec = readStreamSingle(uiPlugin, std::move(lines), delimiter, decimalSeparator,
-                                 xColumn, yColumn, highColumn, emptyLines, linesRead);
+                                 xColumn, yColumn, highColumn, emptyLines, linesRead, fileName);
   }
 
   return DataPack(std::move(ptsVecVec), std::move(xType), std::move(yTypes));
@@ -348,7 +351,7 @@ std::tuple<QString, QString> CsvFileLoader::readHeaderSingle(const QStringList &
 
 CsvFileLoader::PointVecVec CsvFileLoader::readStreamMulti(UIPlugin *uiPlugin,
                                                           QStringList &&lines, const QChar &delimiter, const QChar &decimalSeparator,
-                                                          const int columns, const int emptyLines, int linesRead)
+                                                          const int columns, const int emptyLines, int linesRead, const QString &fileName)
 {
   assert(columns > 1);
 
@@ -366,7 +369,7 @@ CsvFileLoader::PointVecVec CsvFileLoader::readStreamMulti(UIPlugin *uiPlugin,
 
     values = line.split(delimiter);
     if (values.size() != columns) {
-      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_DELIMITER, linesRead + emptyLines + 1, line);
+      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_DELIMITER, linesRead + emptyLines + 1, fileName, line);
       return ptsVecVec;
     }
 
@@ -374,7 +377,7 @@ CsvFileLoader::PointVecVec CsvFileLoader::readStreamMulti(UIPlugin *uiPlugin,
       try {
 	sanitizeDecSep(v, decimalSeparator);
       } catch (const InvalidSeparatorError &) {
-        showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_DELIMITER, linesRead + emptyLines + 1, line);
+        showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_DELIMITER, linesRead + emptyLines + 1, fileName, line);
 
 	return ptsVecVec;
       }
@@ -386,7 +389,7 @@ CsvFileLoader::PointVecVec CsvFileLoader::readStreamMulti(UIPlugin *uiPlugin,
         yVals.at(jdx - 1) = readValue(values.at(jdx));
       }
     } catch (const NonnumericValueError &) {
-      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_VALUE_DATA, linesRead + emptyLines + 1, line);
+      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_VALUE_DATA, linesRead + emptyLines + 1, fileName, line);
 
       return ptsVecVec;
     }
@@ -403,7 +406,7 @@ CsvFileLoader::PointVecVec CsvFileLoader::readStreamMulti(UIPlugin *uiPlugin,
 CsvFileLoader::PointVecVec CsvFileLoader::readStreamSingle(UIPlugin *uiPlugin,
                                                            QStringList &&lines, const QChar &delimiter, const QChar &decimalSeparator,
                                                            const int xColumn, const int yColumn, const int highColumn,
-                                                           const int emptyLines, int linesRead)
+                                                           const int emptyLines, int linesRead, const QString &fileName)
 {
   PointVec points;
 
@@ -414,7 +417,7 @@ CsvFileLoader::PointVecVec CsvFileLoader::readStreamSingle(UIPlugin *uiPlugin,
 
     values = line.split(delimiter);
     if (values.size() < highColumn) {
-      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_DELIMITER, linesRead + emptyLines + 1, line);
+      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_DELIMITER, linesRead + emptyLines + 1, fileName, line);
       return { points };
     }
 
@@ -425,7 +428,7 @@ CsvFileLoader::PointVecVec CsvFileLoader::readStreamSingle(UIPlugin *uiPlugin,
       sanitizeDecSep(sx, decimalSeparator);
       sanitizeDecSep(sy, decimalSeparator);
     } catch (const InvalidSeparatorError &) {
-      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_DELIMITER, linesRead + emptyLines + 1, line);
+      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_DELIMITER, linesRead + emptyLines + 1, fileName, line);
       return { points };
     }
 
@@ -433,7 +436,7 @@ CsvFileLoader::PointVecVec CsvFileLoader::readStreamSingle(UIPlugin *uiPlugin,
       x = readValue(sx);
       y = readValue(sy);
     } catch (const NonnumericValueError &) {
-      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_VALUE_DATA, linesRead + emptyLines + 1, line);
+      showMalformedFileError(uiPlugin, MalformedCsvFileDialog::Error::BAD_VALUE_DATA, linesRead + emptyLines + 1, fileName, line);
       return { points };
     }
 

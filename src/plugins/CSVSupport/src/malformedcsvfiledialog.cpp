@@ -9,12 +9,13 @@ const QString MalformedCsvFileDialog::BAD_DELIMITER_MSG{"Invalid delimiter on li
 const QString MalformedCsvFileDialog::BAD_TIME_MSG {"Invalid value for \"time\" on line %1. Data will be incomplete"};
 const QString MalformedCsvFileDialog::BAD_VALUE_MSG{"Invalid value for \"value\" on line %1. Data will be incomplete"};
 
-MalformedCsvFileDialog::MalformedCsvFileDialog(const Error err, const int lineNo, const QString &badLine, QWidget *parent) :
+MalformedCsvFileDialog::MalformedCsvFileDialog(const Error err, const int lineNo, const QString &fileName, const QString &badLine, QWidget *parent) :
   QDialog(parent),
   ui(new Ui::MalformedCsvFileDialog)
 {
   ui->setupUi(this);
 
+  ui->ql_fileName->setText(fileName);
   ui->qpte_badLine->appendPlainText(badLine);
 
   switch (err) {

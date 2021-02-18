@@ -20,7 +20,7 @@ public:
     BAD_VALUE_DATA
   };
 
-  explicit MalformedCsvFileDialog(const Error err, const int lineNo, const QString &badString, QWidget *parent = nullptr);
+  explicit MalformedCsvFileDialog(const Error err, const int lineNo, const QString &fileName, const QString &badString, QWidget *parent = nullptr);
   ~MalformedCsvFileDialog();
 
 private:
