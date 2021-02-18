@@ -854,7 +854,7 @@ std::vector<Data> ASCSupport::loadInternal(const std::string &path, AvailableCha
   try {
     inStream = readFile(path, encoding);
   } catch (const ASCFormatException &ex) {
-    reportError(m_uiPlugin, ex.what());
+    reportError(m_uiPlugin, QString{"Cannot read file %1\n%2"}.arg(path.c_str(), ex.what()));
     return data;
   }
 
@@ -865,7 +865,7 @@ std::vector<Data> ASCSupport::loadInternal(const std::string &path, AvailableCha
   }
 
   if (!inStream.eof()) {
-    reportError(m_uiPlugin, "I/O error while reading ASC file");
+    reportError(m_uiPlugin, QString{"Cannot read file %1\n%2"}.arg("I/O error while reading ASC file"));
     return data;
   }
 
@@ -874,7 +874,7 @@ std::vector<Data> ASCSupport::loadInternal(const std::string &path, AvailableCha
   spliceHeaderTraces(lines, header, traces);
 
   if (header.size() < 1) {
-    reportError(m_uiPlugin, "File contains no header"); /* TODO: Switch to headerless mode */
+    reportError(m_uiPlugin, QString{"Cannot read file %1\n%2"}.arg(path.c_str(), "File contains no header")); /* TODO: Switch to headerless mode */
     return data;
   }
 
@@ -902,10 +902,10 @@ std::vector<Data> ASCSupport::loadInternal(const std::string &path, AvailableCha
 
     parseTraces(m_uiPlugin, data, ctx, traces, selChans);
   } catch (ASCFormatException &ex) {
-    reportError(m_uiPlugin, QString::fromStdString(ex.what()));
+    reportError(m_uiPlugin, QString{"Cannot read file %1\n%2"}.arg(path.c_str(), ex.what()));
     return std::vector<Data>{};
   } catch (std::bad_alloc &) {
-    reportError(m_uiPlugin, QObject::tr("Insufficient memory to read ASC file"));
+    reportError(m_uiPlugin, QString{"Cannot read file %1\n%2"}.arg(path.c_str(), "Insufficient memory to read ASC file"));
     return std::vector<Data>{};
   }
 
