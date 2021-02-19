@@ -13,9 +13,9 @@
   <property name="windowTitle">
    <string>Pick a ChemStation file to load</string>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout_2">
+  <layout class="QVBoxLayout" name="verticalLayout_2" stretch="1,0,0">
    <item>
-    <layout class="QVBoxLayout" name="panesLayout"/>
+    <layout class="QVBoxLayout" name="panesLayout" stretch=""/>
    </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
@@ -57,6 +57,13 @@
       </widget>
      </item>
     </layout>
+   </item>
+   <item>
+    <widget class="QLabel" name="ql_loadingModeHint">
+     <property name="text">
+      <string>&lt;PLACEHOLDER&gt;</string>
+     </property>
+    </widget>
    </item>
   </layout>
  </widget>

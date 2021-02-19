@@ -9,6 +9,10 @@
 #include <QMessageBox>
 #include <QHeaderView>
 
+static const QString SINGLE_FILE_HINT{"Loads a single signal trace from the selected .D directory"};
+static const QString WHOLE_DIRECTORY_HINT{"Loads selected type of signal trace from all .D directories contained in the selected directory"};
+static const QString MULTIPLE_DIRECTORIES_HINT{"Loads selected type of signal trace from all selected .D directories"};
+
 LoadChemStationDataDialog::LoadInfo::LoadInfo(const LoadingMode loadingMode, const QString &path,
                                               const QStringList &dirPaths,
                                               const ChemStationBatchLoader::Filter &filter) :
@@ -74,6 +78,7 @@ LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QFileSyst
   ui->qcbox_loadingMode->addItem(tr("Whole directory"), QVariant::fromValue(LoadingMode::WHOLE_DIRECTORY));
   ui->qcbox_loadingMode->addItem(tr("Multiple directories"), QVariant::fromValue(LoadingMode::MULTIPLE_DIRECTORIES));
   m_loadingMode = LoadingMode::SINGLE_FILE;
+  ui->ql_loadingModeHint->setText(SINGLE_FILE_HINT);
 
   /* Hide all additonal information and show only the name
    * of the file in the browsing tree */
@@ -317,16 +322,19 @@ void LoadChemStationDataDialog::onLoadingModeActivated()
     qtrv_fileSystem->setSelectionMode(QAbstractItemView::SingleSelection);
     m_finfoModel->clear();
     qtbv_files->setModel(m_finfoModel);
+    ui->ql_loadingModeHint->setText(SINGLE_FILE_HINT);
     break;
   case LoadingMode::WHOLE_DIRECTORY:
     qtrv_fileSystem->setSelectionMode(QAbstractItemView::SingleSelection);
     m_batchLoadModel->clear();
     qtbv_files->setModel(m_batchLoadModel);
+    ui->ql_loadingModeHint->setText(WHOLE_DIRECTORY_HINT);
     break;
   case LoadingMode::MULTIPLE_DIRECTORIES:
     qtrv_fileSystem->setSelectionMode(QAbstractItemView::MultiSelection);
     m_batchLoadModel->clear();
     qtbv_files->setModel(m_batchLoadModel);
+    ui->ql_loadingModeHint->setText(MULTIPLE_DIRECTORIES_HINT);
     break;
   }
 }
