@@ -9,7 +9,7 @@
 #include <QMessageBox>
 #include <QHeaderView>
 
-static const QString SINGLE_FILE_HINT{"Loads a single signal trace from the selected .D directory"};
+static const QString SINGLE_FILE_HINT{"Loads selected signal traces from the selected .D directory"};
 static const QString WHOLE_DIRECTORY_HINT{"Loads selected type of signal trace from all .D directories contained in the selected directory"};
 static const QString MULTIPLE_DIRECTORIES_HINT{"Loads selected type of signal trace from all selected .D directories"};
 
@@ -74,9 +74,9 @@ LoadChemStationDataDialog::LoadChemStationDataDialog(UIPlugin *plugin, QFileSyst
   qtrv_fileSystem->setModel(m_fsModel);
   qtbv_files->setModel(m_finfoModel);
 
-  ui->qcbox_loadingMode->addItem(tr("Single file"), QVariant::fromValue(LoadingMode::SINGLE_FILE));
-  ui->qcbox_loadingMode->addItem(tr("Whole directory"), QVariant::fromValue(LoadingMode::WHOLE_DIRECTORY));
-  ui->qcbox_loadingMode->addItem(tr("Multiple directories"), QVariant::fromValue(LoadingMode::MULTIPLE_DIRECTORIES));
+  ui->qcbox_loadingMode->addItem(tr("Single .D directory"), QVariant::fromValue(LoadingMode::SINGLE_FILE));
+  ui->qcbox_loadingMode->addItem(tr("Multiple .D directories"), QVariant::fromValue(LoadingMode::MULTIPLE_DIRECTORIES));
+  ui->qcbox_loadingMode->addItem(tr("All .D directories in parent directory"), QVariant::fromValue(LoadingMode::WHOLE_DIRECTORY));
   m_loadingMode = LoadingMode::SINGLE_FILE;
   ui->ql_loadingModeHint->setText(SINGLE_FILE_HINT);
 
