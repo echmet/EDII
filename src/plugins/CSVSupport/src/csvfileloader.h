@@ -14,10 +14,19 @@ namespace plugin {
 class CsvFileLoader
 {
 public:
+  enum class EncodingType {
+    SingleByte,
+    UTF8,
+    UTF16LE,
+    UTF16BE,
+    UTF32LE,
+    UTF32BE
+  };
+
   class Encoding {
   public:
     explicit Encoding();
-    Encoding(const QString &name, const QByteArray &bom, const QString &displayedName);
+    Encoding(const QString &name, const QByteArray &bom, const QString &displayedName, const EncodingType type);
     Encoding(const Encoding &other);
 
     Encoding &operator=(const Encoding &other);
@@ -26,6 +35,7 @@ public:
     const QByteArray bom;
     const bool canHaveBom;
     const QString displayedName;
+    const EncodingType type;
   };
 
   class DataPack {
@@ -126,22 +136,23 @@ private:
                                                        const bool hasHeader, const int highColumn, int &linesRead);
 
   static DataPack readStream(UIPlugin *uiPlugin,
-                             QTextStream &stream, const QChar &delimiter, const QChar &decimalSeparator,
+                             std::istream &stream, const Encoding &encoding,
+                             const QChar &delimiter, const QChar &decimalSeparator,
                              const int xColumn, const int yColumn,
                              const bool multipleYcols,
                              const bool hasHeader, const int linesToSkip,
-			     const QString &fileName);
+                             const QString &fileName);
 
   static PointVecVec readStreamMulti(UIPlugin *uiPlugin,
                                      QStringList &&lines, const QChar &delimiter, const QChar &decimalSeparator,
                                      const int columns, const int emptyLines, int linesRead,
-				     const QString &fileName);
+                                     const QString &fileName);
 
   static PointVecVec readStreamSingle(UIPlugin *uiPlugin,
                                       QStringList &&lines, const QChar &delimiter, const QChar &decimalSeparator,
                                       const int xColumn, const int yColumn, const int highColumn,
                                       const int emptyLines, int linesRead,
-				      const QString &fileName);
+                                      const QString &fileName);
 };
 
 } // namespace plugin

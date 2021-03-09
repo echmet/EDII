@@ -2,15 +2,43 @@
 #include "malformedcsvfiledialog.h"
 
 #include <QApplication>
+#include <QByteArray>
 #include <QClipboard>
-#include <QFile>
+#include <QFileInfo>
 #include <QLocale>
 #include <QMessageBox>
-#include <QTextStream>
+#include <QTextCodec>
+#include <QtGlobal>
+#include <bits/stdint-uintn.h>
+#include <istream>
 #include <plugins/threadeddialog.h>
 
+#include <cstring>
+#include <fstream>
+#include <memory>
+#include <sstream>
+#include <stdexcept>
 
-class InvalidHeaderError : std::runtime_error {
+#ifdef WIN32
+#include <memory>
+
+#define NOMINMAX
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif // WIN32
+
+#if Q_BYTE_ORDER == Q_BIG_ENDIAN
+  #define IS_BIG_ENDIAN
+#endif
+
+
+class InvalidCodePointError : public std::runtime_error {
+public:
+  InvalidCodePointError() : std::runtime_error("Input stream contains invalid code point")
+  {}
+};
+
+class InvalidHeaderError : public std::runtime_error {
 public:
   InvalidHeaderError(const QString &line) : std::runtime_error("Cannot head table header"),
     line(line)
@@ -19,44 +47,308 @@ public:
   const QString line;
 };
 
-class InvalidSeparatorError : std::runtime_error {
+class InvalidSeparatorError : public std::runtime_error {
 public:
   InvalidSeparatorError() : std::runtime_error("String does not contain any periods")
   {}
 };
 
-class NonnumericValueError : std::runtime_error {
+class NonnumericValueError : public std::runtime_error {
 public:
   NonnumericValueError() : std::runtime_error("Value cannot be converted to number")
   {}
 };
 
+#ifdef WIN32
+static
+std::unique_ptr<char> toNativeCodepage(const char *utf8_str)
+{
+  auto wcLen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8_str, -1, nullptr, 0);
+  if (wcLen == 0)
+    throw std::runtime_error{"Cannot convert file name to UTF-16 string"};
+
+  auto wstr = std::unique_ptr<wchar_t>(new wchar_t[wcLen]);
+  if (wstr == nullptr)
+    throw std::runtime_error{"Out of memory"};
+
+  wcLen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8_str, -1, wstr.get(), wcLen);
+  if (wcLen == 0)
+    throw std::runtime_error{"Cannot convert file name to UTF-16 string"};
+
+  BOOL dummy;
+  auto mbLen = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, wstr.get(), -1, nullptr, 0, NULL, &dummy);
+  if (mbLen == 0)
+    throw std::runtime_error{"Cannot convert file name to native codepage"};
+
+  auto natstr = std::unique_ptr<char>(new char[mbLen]);
+  mbLen = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, wstr.get(), -1, natstr.get(), mbLen, NULL, &dummy);
+  if (mbLen == 0)
+    throw std::runtime_error{"Cannot convert file name to native codepage"};
+
+  return natstr;
+}
+#endif // WIN32
+
 namespace plugin {
 
-const QMap<QString, CsvFileLoader::Encoding> CsvFileLoader::SUPPORTED_ENCODINGS = { {"ISO-8859-1", CsvFileLoader::Encoding("ISO-8859-1", QByteArray(), "ISO-8859-1 (Latin 1)") },
-                                                                                    {"ISO-8859-2", CsvFileLoader::Encoding("ISO-8859-2", QByteArray(), "ISO-8859-2 (Latin 2)") },
-                                                                                    { "windows-1250", CsvFileLoader::Encoding("windows-1250", QByteArray(), "Windows-1250 (cp1250)") },
-                                                                                    { "windows-1251", CsvFileLoader::Encoding("windows-1251", QByteArray(), "Windows-1251 (cp1251)") },
-                                                                                    { "windows-1252", CsvFileLoader::Encoding("windows-1252", QByteArray(), "Windows-1252 (cp1252)") },
-                                                                                    { "UTF-8", CsvFileLoader::Encoding("UTF-8", QByteArray("\xEF\xBB\xBF", 3), "UTF-8") },
-                                                                                    { "UTF-16LE", CsvFileLoader::Encoding("UTF-16LE", QByteArray("\xFF\xFE", 2), "UTF-16LE (Little Endian)") },
-                                                                                    { "UTF-16BE", CsvFileLoader::Encoding("UTF-16BE", QByteArray("\xFF\xFF", 2), "UTF-16BE (Big Endian)") },
-                                                                                    { "UTF-32LE", CsvFileLoader::Encoding("UTF-32LE", QByteArray("\xFF\xFE\x00\x00", 4), "UTF-32LE (Little Endian)") },
-                                                                                    { "UTF-32BE", CsvFileLoader::Encoding("UTF-32BE", QByteArray("\x00\x00\xFF\xFF", 4), "UTF-32BE (Big Endian)") } };
+template <bool Flipped, typename T> struct LF{};
+template <bool Flipped, typename T> struct CR{};
+template <bool Flipped> struct Surrogate{};
+
+template <> struct LF<false, char> { static const uint32_t value = 0x0A; };
+template <> struct CR<false, char> { static const uint32_t value = 0x0D; };
+template <> struct LF<false, uint16_t> { static const uint16_t value = 0x000A; };
+template <> struct CR<false, uint16_t> { static const uint16_t value = 0x000D; };
+template <> struct LF<false, uint32_t> { static const uint32_t value = 0x0000000A; };
+template <> struct CR<false, uint32_t> { static const uint32_t value = 0x0000000D; };
+template <> struct Surrogate<false> { static const uint16_t value = 0xD800; };
+
+template <> struct LF<true, uint16_t> { static const uint16_t value = 0x0A00; };
+template <> struct CR<true, uint16_t> { static const uint16_t value = 0x0D00; };
+template <> struct LF<true, uint32_t> { static const uint32_t value = 0x0A000000; };
+template <> struct CR<true, uint32_t> { static const uint32_t value = 0x0D000000; };
+template <> struct Surrogate<true> { static const uint16_t value = 0x00D8; };
+
+static
+QByteArray extractLineSingle(std::istream &stm)
+{
+  QByteArray ba;
+
+  while (stm.peek() != EOF) {
+    const auto b = stm.get();
+    if (b != LF<false, char>::value && b != CR<false, char>::value) {
+      ba.append(char(b));
+      continue;
+    }
+
+    const auto next = stm.peek();
+    if (next == LF<false, char>::value || next == CR<false, char>::value)
+      stm.get();
+    break;
+  }
+
+  return ba;
+}
+
+template <size_t N>
+static
+void readMultibyte(QByteArray &ba, std::istream &stm) {
+  char nbs[N];
+  stm.read(nbs, N);
+  if (stm.eof())
+    throw InvalidCodePointError();
+  ba.append(nbs, N);
+}
+
+static
+QByteArray extractLineUtf8(std::istream &stm)
+{
+  QByteArray ba;
+
+  while (stm.peek() != EOF) {
+    const auto ch = stm.get();
+    if (ch == 0xC0) {
+      ba.append(char(ch));
+      readMultibyte<1>(ba, stm);
+    } else if (ch == 0xE0) {
+      ba.append(char(ch));
+      readMultibyte<2>(ba, stm);
+    } else if (ch == 0xF0) {
+      ba.append(char(ch));
+      readMultibyte<3>(ba, stm);
+    } else {
+      if (ch != CR<false, char>::value && ch != LF<false, char>::value) {
+        ba.append(char(ch));
+        continue;
+      }
+
+      const auto next = stm.peek();
+      if (next == LF<false, char>::value || next == CR<false, char>::value)
+        stm.get();
+
+      break;
+    }
+  }
+
+  return ba;
+}
+
+union Utf16Char {
+  char bytes[2];
+  uint16_t code;
+};
+
+template <bool Flip>
+static
+QByteArray extractLineUtf16(std::istream &stm)
+{
+  QByteArray ba;
+
+  Utf16Char ch;
+  while (stm.peek() != EOF) {
+    stm.read(ch.bytes, 2);
+    if (stm.eof())
+      throw InvalidCodePointError();
+
+    if (ch.code & Surrogate<Flip>::value) {
+      ba.append(ch.bytes);
+
+      stm.read(ch.bytes, 2);
+      if (stm.eof())
+        throw InvalidCodePointError();
+      ba.append(ch.bytes, 2);
+    } else {
+      if (ch.code != LF<Flip, uint16_t>::value && ch.code != CR<Flip, uint16_t>::value) {
+        ba.append(ch.bytes, 2);
+        continue;
+      }
+
+      if (!stm || stm.peek() == EOF)
+        break;
+
+      Utf16Char chTwo;
+      stm.read(chTwo.bytes, 2);
+      if (stm.eof())
+        throw InvalidCodePointError();
+      if (chTwo.code != LF<Flip, uint16_t>::value && chTwo.code != CR<Flip, uint16_t>::value) {
+        stm.putback(chTwo.bytes[1]);
+        stm.putback(chTwo.bytes[0]);
+      }
+
+      break;
+    }
+  }
+
+  return ba;
+}
+
+union Utf32Char {
+  char bytes[4];
+  uint32_t code;
+};
+
+template <bool Flip>
+static
+QByteArray extractLineUtf32(std::istream &stm)
+{
+  QByteArray ba;
+
+  Utf32Char ch;
+  while (stm.peek() != EOF) {
+    stm.read(ch.bytes, 4);
+    if (stm.eof())
+      throw InvalidCodePointError();
+    if (ch.code != LF<Flip, uint32_t>::value && ch.code != CR<Flip, uint32_t>::value) {
+      ba.append(ch.bytes, 4);
+      continue;
+    }
+
+    if (!stm || stm.peek() == EOF)
+      break;
+
+    Utf32Char chTwo;
+    stm.read(chTwo.bytes, 4);
+    if (stm.eof())
+      throw InvalidCodePointError();
+    if (chTwo.code != LF<Flip, uint32_t>::value && chTwo.code != CR<Flip, uint32_t>::value) {
+      stm.putback(chTwo.bytes[3]);
+      stm.putback(chTwo.bytes[2]);
+      stm.putback(chTwo.bytes[1]);
+      stm.putback(chTwo.bytes[0]);
+    }
+
+    break;
+  }
+
+  return ba;
+}
+
+static
+QStringList streamToLines(std::istream &stream, const CsvFileLoader::Encoding &encoding)
+{
+  QStringList lines;
+
+  QByteArray (*extractLine)(std::istream &);
+
+  switch (encoding.type) {
+  case CsvFileLoader::EncodingType::SingleByte:
+    extractLine = extractLineSingle;
+    break;
+  case CsvFileLoader::EncodingType::UTF8:
+    extractLine = extractLineUtf8;
+    break;
+  case CsvFileLoader::EncodingType::UTF16BE:
+#ifdef IS_BIG_ENDIAN
+    extractLine = extractLineUtf16<false>;
+#else
+    extractLine = extractLineUtf16<true>;
+#endif
+    break;
+  case CsvFileLoader::EncodingType::UTF16LE:
+#ifdef IS_BIG_ENDIAN
+    extractLine = extractLineUtf16<true>;
+#else
+    extractLine = extractLineUtf16<false>;
+#endif
+    break;
+  case CsvFileLoader::EncodingType::UTF32BE:
+#ifdef IS_BIG_ENDIAN
+    extractLine = extractLineUtf32<false>;
+#else
+    extractLine = extractLineUtf32<true>;
+#endif
+    break;
+  case CsvFileLoader::EncodingType::UTF32LE:
+#ifdef IS_BIG_ENDIAN
+    extractLine = extractLineUtf32<true>;
+#else
+    extractLine = extractLineUtf32<false>;
+#endif
+    break;
+  }
+
+  assert(extractLine);
+
+  auto codec = QTextCodec::codecForName(encoding.name.toUtf8().data());
+  assert(codec);
+
+  while (true) {
+    auto raw = extractLine(stream);
+    if (stream.peek() != EOF || raw.size() > 0)
+      lines.append(codec->toUnicode(raw));
+    else
+      break;
+  }
+
+  return lines;
+}
+
+const QMap<QString, CsvFileLoader::Encoding> CsvFileLoader::SUPPORTED_ENCODINGS = { { "ISO-8859-1", CsvFileLoader::Encoding("ISO-8859-1", QByteArray(), "ISO-8859-1 (Latin 1)", CsvFileLoader::EncodingType::SingleByte) },
+                                                                                    { "ISO-8859-2", CsvFileLoader::Encoding("ISO-8859-2", QByteArray(), "ISO-8859-2 (Latin 2)", CsvFileLoader::EncodingType::SingleByte) },
+                                                                                    { "windows-1250", CsvFileLoader::Encoding("windows-1250", QByteArray(), "Windows-1250 (cp1250)", CsvFileLoader::EncodingType::SingleByte) },
+                                                                                    { "windows-1251", CsvFileLoader::Encoding("windows-1251", QByteArray(), "Windows-1251 (cp1251)", CsvFileLoader::EncodingType::SingleByte) },
+                                                                                    { "windows-1252", CsvFileLoader::Encoding("windows-1252", QByteArray(), "Windows-1252 (cp1252)", CsvFileLoader::EncodingType::SingleByte) },
+                                                                                    { "UTF-8", CsvFileLoader::Encoding("UTF-8", QByteArray("\xEF\xBB\xBF", 3), "UTF-8", CsvFileLoader::EncodingType::UTF8) },
+                                                                                    { "UTF-16LE", CsvFileLoader::Encoding("UTF-16LE", QByteArray("\xFF\xFE", 2), "UTF-16LE (Little Endian)", CsvFileLoader::EncodingType::UTF16LE) },
+                                                                                    { "UTF-16BE", CsvFileLoader::Encoding("UTF-16BE", QByteArray("\xFF\xFF", 2), "UTF-16BE (Big Endian)", CsvFileLoader::EncodingType::UTF16BE) },
+                                                                                    { "UTF-32LE", CsvFileLoader::Encoding("UTF-32LE", QByteArray("\xFF\xFE\x00\x00", 4), "UTF-32LE (Little Endian)", CsvFileLoader::EncodingType::UTF32LE) },
+                                                                                    { "UTF-32BE", CsvFileLoader::Encoding("UTF-32BE", QByteArray("\x00\x00\xFF\xFF", 4), "UTF-32BE (Big Endian)", CsvFileLoader::EncodingType::UTF32BE) } };
 
 CsvFileLoader::Encoding::Encoding() :
   name(""),
   bom(QByteArray()),
   canHaveBom(false),
-  displayedName("")
+  displayedName(""),
+  type(EncodingType::SingleByte)
 {
 }
 
-CsvFileLoader::Encoding::Encoding(const QString &name, const QByteArray &bom, const QString &displayedName) :
+CsvFileLoader::Encoding::Encoding(const QString &name, const QByteArray &bom, const QString &displayedName, const EncodingType type) :
   name(name),
   bom(bom),
   canHaveBom(bom.size() > 0 ? true : false),
-  displayedName(displayedName)
+  displayedName(displayedName),
+  type(type)
 {
 }
 
@@ -64,7 +356,8 @@ CsvFileLoader::Encoding::Encoding(const Encoding &other) :
   name(other.name),
   bom(other.bom),
   canHaveBom(other.canHaveBom),
-  displayedName(other.displayedName)
+  displayedName(other.displayedName),
+  type(other.type)
 {
 }
 
@@ -74,6 +367,7 @@ CsvFileLoader::Encoding & CsvFileLoader::Encoding::operator=(const CsvFileLoader
   const_cast<QByteArray&>(bom) = other.bom;
   const_cast<bool&>(canHaveBom) = other.canHaveBom;
   const_cast<QString&>(displayedName) = other.displayedName;
+  const_cast<EncodingType&>(type) = other.type;
 
   return *this;
 }
@@ -177,61 +471,60 @@ void showMalformedFileError(UIPlugin *uiPlugin, const MalformedCsvFileDialog::Er
 CsvFileLoader::DataPack CsvFileLoader::readClipboard(UIPlugin *uiPlugin, const Parameters &params)
 {
   QString clipboardText = QApplication::clipboard()->text();
-  QTextStream stream;
+  std::istringstream stream(clipboardText.toStdString());
 
-  stream.setCodec(params.encodingId.toUtf8());
-  stream.setString(&clipboardText);
+  assert(SUPPORTED_ENCODINGS.contains(params.encodingId));
+  const auto &encoding = SUPPORTED_ENCODINGS[params.encodingId];
 
-  return readStream(uiPlugin, stream, params.delimiter, params.decimalSeparator, params.xColumn, params.yColumn,
+  return readStream(uiPlugin, stream, encoding, params.delimiter, params.decimalSeparator, params.xColumn, params.yColumn,
                     params.multipleYcols, params.hasHeader, params.linesToSkip, "<clipboard>");
 }
 
 CsvFileLoader::DataPack CsvFileLoader::readFile(UIPlugin *uiPlugin, const QString &path, const Parameters &params)
 {
-  QFile dataFile(path);
-  QTextStream stream;
+#if WIN32
+  auto natPath = toNativeCodepage(path.toUtf8().data());
+  std::ifstream stream(natPath.get(), std::ios::binary);
+#else
+  std::ifstream stream(path.toUtf8().data(), std::ios::binary);
+#endif // WIN32
 
-  if (!dataFile.exists()) {
-    ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Invalid file"), QObject::tr("Specified file does not exist"));
+  if (!stream.is_open()) {
+    ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot open file"), QString(QObject::tr("Cannot open the specified file for reading")));
     return {};
   }
 
-  if (!dataFile.open(QIODevice::ReadOnly | QIODevice::Text)) {
-    ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot open file"), QString(QObject::tr("Cannot open the specified file for reading\n"
-                                                                                                                "Error reported: %1")).arg(dataFile.errorString()));
-    return {};
-  }
-
+  assert(SUPPORTED_ENCODINGS.contains(params.encodingId));
+  const auto &encoding = SUPPORTED_ENCODINGS[params.encodingId];
   /* Check BOM */
   if (params.readBom) {
-    const QByteArray &bom = SUPPORTED_ENCODINGS[params.encodingId].bom;
-    const QByteArray actualBom = dataFile.read(bom.size());
+    const auto &bom = encoding.bom;
+    const auto buf = std::unique_ptr<char[]>(new char[bom.size()]);
 
-    if (actualBom.size() != bom.size()) {
-      ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot read file"), QObject::tr("Byte order mark was expected but not found"));
+    stream.read(buf.get(), bom.size());
+    if (stream.eof()) {
+      ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot read file"), QObject::tr("Input file ended byte order mark could be read"));
       return {};
     }
 
-    if (memcmp(actualBom.data(), bom.data(), bom.size())) {
+    if (std::memcmp(buf.get(), bom.data(), bom.size())) {
       ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot read file"), QObject::tr("Byte order mark does not match to that expected for the given encoding"));
       return {};
     }
   }
 
-  stream.setDevice(&dataFile);
-  stream.setCodec(params.encodingId.toUtf8());
-
-  return readStream(uiPlugin, stream, params.delimiter, params.decimalSeparator, params.xColumn, params.yColumn,
-                    params.multipleYcols, params.hasHeader, params.linesToSkip, dataFile.fileName());
+  return readStream(uiPlugin, stream, encoding, params.delimiter, params.decimalSeparator, params.xColumn, params.yColumn,
+                    params.multipleYcols, params.hasHeader, params.linesToSkip, QFileInfo(path).fileName());
 
 }
 
 CsvFileLoader::DataPack CsvFileLoader::readStream(UIPlugin *uiPlugin,
-                                                  QTextStream &stream, const QChar &delimiter, const QChar &decimalSeparator,
+                                                  std::istream &stream, const Encoding &encoding,
+                                                  const QChar &delimiter, const QChar &decimalSeparator,
                                                   const int xColumn, const int yColumn,
                                                   const bool multipleYcols,
                                                   const bool hasHeader, const int linesToSkip,
-						  const QString &fileName)
+                                                  const QString &fileName)
 {
   PointVecVec ptsVecVec;
   QString xType;
@@ -241,21 +534,21 @@ CsvFileLoader::DataPack CsvFileLoader::readStream(UIPlugin *uiPlugin,
   int linesRead = 0;
   int emptyLines = 0;
 
-  /* Skip leading blank lines */
-  while (!stream.atEnd()) {
-    QString line = stream.readLine();
-
-    if (line.trimmed() != QString("")) {
-      lines.append(line);
-      break;
-    }
-
-    emptyLines++;
+  try {
+    lines = streamToLines(stream, encoding);
+  } catch (const std::runtime_error &ex) {
+    ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot read input"), ex.what());
+    return {};
   }
 
-  /* Read the rest of the file */
-  while (!stream.atEnd())
-    lines.append(stream.readLine());
+  /* Remove leading blank lines */
+  while (!lines.empty()) {
+    if (lines.constFirst().trimmed().isEmpty()) {
+      lines.pop_front();
+      emptyLines++;
+    } else
+      break;
+  }
 
   if (lines.size() < 1) {
     ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("No data"), QObject::tr("Input stream contains no data"));
