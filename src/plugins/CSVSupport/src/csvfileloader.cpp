@@ -9,8 +9,6 @@
 #include <QMessageBox>
 #include <QTextCodec>
 #include <QtGlobal>
-#include <bits/stdint-uintn.h>
-#include <istream>
 #include <plugins/threadeddialog.h>
 
 #include <cstring>
@@ -61,13 +59,13 @@ public:
 
 #ifdef WIN32
 static
-std::unique_ptr<char> toNativeCodepage(const char *utf8_str)
+std::unique_ptr<char[]> toNativeCodepage(const char *utf8_str)
 {
   auto wcLen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8_str, -1, nullptr, 0);
   if (wcLen == 0)
     throw std::runtime_error{"Cannot convert file name to UTF-16 string"};
 
-  auto wstr = std::unique_ptr<wchar_t>(new wchar_t[wcLen]);
+  auto wstr = std::unique_ptr<wchar_t[]>(new wchar_t[wcLen]);
   if (wstr == nullptr)
     throw std::runtime_error{"Out of memory"};
 
@@ -80,7 +78,7 @@ std::unique_ptr<char> toNativeCodepage(const char *utf8_str)
   if (mbLen == 0)
     throw std::runtime_error{"Cannot convert file name to native codepage"};
 
-  auto natstr = std::unique_ptr<char>(new char[mbLen]);
+  auto natstr = std::unique_ptr<char[]>(new char[mbLen]);
   mbLen = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, wstr.get(), -1, natstr.get(), mbLen, NULL, &dummy);
   if (mbLen == 0)
     throw std::runtime_error{"Cannot convert file name to native codepage"};
@@ -483,7 +481,16 @@ CsvFileLoader::DataPack CsvFileLoader::readClipboard(UIPlugin *uiPlugin, const P
 CsvFileLoader::DataPack CsvFileLoader::readFile(UIPlugin *uiPlugin, const QString &path, const Parameters &params)
 {
 #if WIN32
-  auto natPath = toNativeCodepage(path.toUtf8().data());
+  auto natPath = [&]() {
+    try {
+      return toNativeCodepage(path.toUtf8().data());
+    } catch (const std::runtime_error &ex) {
+      ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot open file"), ex.what());
+      return std::unique_ptr<char[]>(nullptr);
+    }
+  }();
+  if (natPath == nullptr)
+    return{};
   std::ifstream stream(natPath.get(), std::ios::binary);
 #else
   std::ifstream stream(path.toUtf8().data(), std::ios::binary);
