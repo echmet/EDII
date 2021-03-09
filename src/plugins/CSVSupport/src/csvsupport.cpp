@@ -17,7 +17,7 @@ public:
       [this]() {
         auto dlg = new QFileDialog{nullptr, QObject::tr("Pick a text file"), this->m_path};
 
-        dlg->setNameFilters({"CSV file (*.csv *.CSV *.txt *.TXT)"});
+        dlg->setNameFilters({"CSV file (*.csv *.CSV *.txt *.TXT)", "Any file (*.*)"});
         dlg->setAcceptMode(QFileDialog::AcceptOpen);
         dlg->setFileMode(QFileDialog::ExistingFiles);
 
