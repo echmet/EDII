@@ -24,13 +24,13 @@ static const char *point_number_dim = "point_number";
 
 #ifdef WIN32
 static
-std::unique_ptr<char> toNativeCodepage(const char *utf8_str)
+std::unique_ptr<char[]> toNativeCodepage(const char *utf8_str)
 {
   auto wcLen = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8_str, -1, nullptr, 0);
   if (wcLen == 0)
     throw std::runtime_error{"Cannot convert file name to UTF-16 string"};
 
-  auto wstr = std::unique_ptr<wchar_t>(new wchar_t[wcLen]);
+  auto wstr = std::unique_ptr<wchar_t[]>(new wchar_t[wcLen]);
   if (wstr == nullptr)
     throw std::runtime_error{"Out of memory"};
 
@@ -43,7 +43,7 @@ std::unique_ptr<char> toNativeCodepage(const char *utf8_str)
   if (mbLen == 0)
     throw std::runtime_error{"Cannot convert file name to native codepage"};
 
-  auto natstr = std::unique_ptr<char>(new char[mbLen]);
+  auto natstr = std::unique_ptr<char[]>(new char[mbLen]);
   mbLen = WideCharToMultiByte(CP_ACP, WC_NO_BEST_FIT_CHARS, wstr.get(), -1, natstr.get(), mbLen, NULL, &dummy);
   if (mbLen == 0)
     throw std::runtime_error{"Cannot convert file name to native codepage"};
