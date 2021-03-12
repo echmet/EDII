@@ -102,7 +102,7 @@ public:
                const int xColumn, const int yColumn,
                const bool multipleYcols,
                const bool hasHeader, const int linesToSkip,
-               const QString &encodingId, const bool &readBom);
+               const QString &encodingId);
     Parameters & operator=(const Parameters &other);
 
     const QChar delimiter;
@@ -113,7 +113,6 @@ public:
     const bool hasHeader;
     const int linesToSkip;
     const QString encodingId;
-    const bool readBom;
     const bool isValid;
   };
 

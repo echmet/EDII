@@ -29,7 +29,7 @@ public:
 	       const bool multipleYcols,
                const QString &xType, const QString &yType, const QString &xUnit, const QString &yUnit,
                const HeaderHandling header, const int linesToSkip,
-               const bool readBom, const QString &encodingId);
+               const QString &encodingId);
     Parameters(const Parameters &other);
 
     const QString delimiter;
@@ -43,7 +43,6 @@ public:
     const QString yUnit;
     const HeaderHandling header;
     const int linesToSkip;
-    const bool readBom;
     const QString encodingId;
 
     Parameters &operator=(const Parameters &other);

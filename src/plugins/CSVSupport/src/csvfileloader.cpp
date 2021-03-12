@@ -398,7 +398,6 @@ CsvFileLoader::Parameters::Parameters() :
   hasHeader(false),
   linesToSkip(0),
   encodingId(QString()),
-  readBom(false),
   isValid(false)
 {
 }
@@ -407,13 +406,13 @@ CsvFileLoader::Parameters::Parameters(const QChar &delimiter, const QChar &decim
                                       const int xColumn, const int yColumn,
                                       const bool multipleYcols,
                                       const bool hasHeader, const int linesToSkip,
-                                      const QString &encodingId, const bool &readBom) :
+                                      const QString &encodingId) :
   delimiter(delimiter),
   decimalSeparator(decimalSeparator),
   xColumn(xColumn), yColumn(yColumn),
   multipleYcols(multipleYcols),
   hasHeader(hasHeader), linesToSkip(linesToSkip),
-  encodingId(encodingId), readBom(readBom),
+  encodingId(encodingId),
   isValid(true)
 {
 }
@@ -428,7 +427,6 @@ CsvFileLoader::Parameters & CsvFileLoader::Parameters::operator=(const Parameter
   const_cast<bool&>(hasHeader) = other.hasHeader;
   const_cast<int&>(linesToSkip) = other.linesToSkip;
   const_cast<QString&>(encodingId) = other.encodingId;
-  const_cast<bool&>(readBom) = other.readBom;
   const_cast<bool&>(isValid) = other.isValid;
 
   return *this;
@@ -523,20 +521,26 @@ CsvFileLoader::DataPack CsvFileLoader::readFile(UIPlugin *uiPlugin, const QStrin
 
   assert(SUPPORTED_ENCODINGS.contains(params.encodingId));
   const auto &encoding = SUPPORTED_ENCODINGS[params.encodingId];
-  /* Check BOM */
-  if (params.readBom) {
-    const auto &bom = encoding.bom;
-    const auto buf = std::unique_ptr<char[]>(new char[bom.size()]);
 
-    stream.read(buf.get(), bom.size());
-    if (stream.eof()) {
-      ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot read file"), QObject::tr("Input file ended byte order mark could be read"));
-      return {};
+  /* Check and skip BOM */
+  const auto &bom = encoding.bom;
+
+  if (!bom.isEmpty()) {
+    const size_t sz = bom.size();
+    const auto buf = std::unique_ptr<char[]>(new char[sz]);
+    std::memset(buf.get(), 0, sz);
+
+    size_t ctr = 0;
+    for (; ctr < sz; ctr++) {
+      const auto b = stream.get();
+      if (b == EOF)
+        break;
+      buf[ctr] = b;
     }
 
     if (std::memcmp(buf.get(), bom.data(), bom.size())) {
-      ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot read file"), QObject::tr("Byte order mark does not match to that expected for the given encoding"));
-      return {};
+      stream.clear();
+      stream.seekg(0, stream.beg);
     }
   }
 

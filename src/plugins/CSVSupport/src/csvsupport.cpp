@@ -158,7 +158,7 @@ CsvFileLoader::Parameters makeCsvLoaderParameters(UIPlugin *plugin, LoadCsvFileT
                                      p.multipleYcols,
                                      p.header != LoadCsvFileDialog::HeaderHandling::NO_HEADER,
                                      p.linesToSkip,
-                                     p.encodingId, p.readBom);
+                                     p.encodingId);
   }
 }
 
