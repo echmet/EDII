@@ -214,15 +214,12 @@ QByteArray extractLineUtf16(std::istream &stm)
         throw InvalidCodePointError();
 
       if (chTwo.code == ch.code) {
-        stm.putback(chTwo.bytes[1]);
-        stm.putback(chTwo.bytes[0]);
+        stm.seekg(-2, stm.cur);
         break;
       }
 
-      if (chTwo.code != LF<Flip, uint16_t>::value && chTwo.code != CR<Flip, uint16_t>::value) {
-        stm.putback(chTwo.bytes[1]);
-        stm.putback(chTwo.bytes[0]);
-      }
+      if (chTwo.code != LF<Flip, uint16_t>::value && chTwo.code != CR<Flip, uint16_t>::value)
+        stm.seekg(-2, stm.cur);
 
       break;
     }
@@ -261,19 +258,12 @@ QByteArray extractLineUtf32(std::istream &stm)
       throw InvalidCodePointError();
 
     if (chTwo.code == ch.code) {
-      stm.putback(chTwo.bytes[3]);
-      stm.putback(chTwo.bytes[2]);
-      stm.putback(chTwo.bytes[1]);
-      stm.putback(chTwo.bytes[0]);
+      stm.seekg(-4, stm.cur);
       break;
     }
 
-    if (chTwo.code != LF<Flip, uint32_t>::value && chTwo.code != CR<Flip, uint32_t>::value) {
-      stm.putback(chTwo.bytes[3]);
-      stm.putback(chTwo.bytes[2]);
-      stm.putback(chTwo.bytes[1]);
-      stm.putback(chTwo.bytes[0]);
-    }
+    if (chTwo.code != LF<Flip, uint32_t>::value && chTwo.code != CR<Flip, uint32_t>::value)
+      stm.seekg(-4, stm.cur);
 
     break;
   }
