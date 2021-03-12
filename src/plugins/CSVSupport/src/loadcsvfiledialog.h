@@ -64,7 +64,6 @@ private:
 
 private slots:
   void onCancelClicked();
-  void onEncodingChanged(const int idx);
   void onHeaderHandlingChanged(const int idx);
   void onLoadClicked();
   void onMultipleYColsClicked();
