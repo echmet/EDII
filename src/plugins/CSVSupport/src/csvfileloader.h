@@ -103,6 +103,7 @@ public:
                const bool multipleYcols,
                const bool hasHeader, const int linesToSkip,
                const QString &encodingId);
+    Parameters(const Parameters &other);
     Parameters & operator=(const Parameters &other);
 
     const QChar delimiter;

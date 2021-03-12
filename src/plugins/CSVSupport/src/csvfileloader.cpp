@@ -417,6 +417,17 @@ CsvFileLoader::Parameters::Parameters(const QChar &delimiter, const QChar &decim
 {
 }
 
+CsvFileLoader::Parameters::Parameters(const Parameters &other) :
+  delimiter(other.delimiter),
+  decimalSeparator(other.decimalSeparator),
+  xColumn(other.xColumn), yColumn(other.yColumn),
+  multipleYcols(other.multipleYcols),
+  hasHeader(other.hasHeader), linesToSkip(other.linesToSkip),
+  encodingId(other.encodingId),
+  isValid(other.isValid)
+{
+}
+
 CsvFileLoader::Parameters & CsvFileLoader::Parameters::operator=(const Parameters &other)
 {
   const_cast<QChar&>(delimiter) = other.delimiter;
