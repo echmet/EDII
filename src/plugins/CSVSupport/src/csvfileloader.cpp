@@ -120,6 +120,8 @@ QByteArray extractLineSingle(std::istream &stm)
     }
 
     const auto next = stm.peek();
+    if (next == b)
+      break;
     if (next == LF<false, char>::value || next == CR<false, char>::value)
       stm.get();
     break;
@@ -161,6 +163,8 @@ QByteArray extractLineUtf8(std::istream &stm)
       }
 
       const auto next = stm.peek();
+      if (next == ch)
+        break;
       if (next == LF<false, char>::value || next == CR<false, char>::value)
         stm.get();
 
@@ -208,6 +212,13 @@ QByteArray extractLineUtf16(std::istream &stm)
       stm.read(chTwo.bytes, 2);
       if (stm.eof())
         throw InvalidCodePointError();
+
+      if (chTwo.code == ch.code) {
+        stm.putback(chTwo.bytes[1]);
+        stm.putback(chTwo.bytes[0]);
+        break;
+      }
+
       if (chTwo.code != LF<Flip, uint16_t>::value && chTwo.code != CR<Flip, uint16_t>::value) {
         stm.putback(chTwo.bytes[1]);
         stm.putback(chTwo.bytes[0]);
@@ -248,6 +259,15 @@ QByteArray extractLineUtf32(std::istream &stm)
     stm.read(chTwo.bytes, 4);
     if (stm.eof())
       throw InvalidCodePointError();
+
+    if (chTwo.code == ch.code) {
+      stm.putback(chTwo.bytes[3]);
+      stm.putback(chTwo.bytes[2]);
+      stm.putback(chTwo.bytes[1]);
+      stm.putback(chTwo.bytes[0]);
+      break;
+    }
+
     if (chTwo.code != LF<Flip, uint32_t>::value && chTwo.code != CR<Flip, uint32_t>::value) {
       stm.putback(chTwo.bytes[3]);
       stm.putback(chTwo.bytes[2]);
