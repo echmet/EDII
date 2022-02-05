@@ -136,6 +136,12 @@ void LoadCsvFileDialog::addEncoding(const QString &id, const QString &name, cons
   m_encodingsModel.appendRow(item);
 }
 
+int LoadCsvFileDialog::exec()
+{
+  refreshPreview();
+  return QDialog::exec();
+}
+
 void LoadCsvFileDialog::onCancelClicked()
 {
   reject();

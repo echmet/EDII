@@ -52,6 +52,7 @@ public:
   ~LoadCsvFileDialog();
   void addEncoding(const QString &id, const QString &name, const bool canHaveBom);
   Parameters parameters() const;
+  virtual int exec() override;
   void refreshPreview();
   void setSource(const QString &path);
   void updatePreview(const bool show);
