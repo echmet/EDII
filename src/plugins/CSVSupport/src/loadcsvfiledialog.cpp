@@ -247,7 +247,7 @@ void LoadCsvFileDialog::refreshPreview()
       :
       CsvFileLoader::previewFile(m_source, encId, lines);
 
-    const auto &prev = ret.first;
+    auto prev = ret.first;
     const auto &err = ret.second;
 
     if (!err.isEmpty()) {
@@ -255,7 +255,8 @@ void LoadCsvFileDialog::refreshPreview()
       ui->ql_previewError->setVisible(true);
       ui->qpte_preview->setVisible(false);
     } else {
-      ui->qpte_preview->setPlainText(prev);
+      const auto detabbed = prev.replace("\t", "<TAB> ");
+      ui->qpte_preview->setPlainText(detabbed);
       ui->qpte_preview->setVisible(true);
       ui->ql_previewError->setVisible(false);
     }
