@@ -1,6 +1,8 @@
+// vim: set sw=2 ts=2 sts=2 expandtab:
+
 #include "loadcsvfiledialog.h"
 #include "ui_loadcsvfiledialog.h"
-#include <QStandardItem>
+#include "csvfileloader.h"
 
 namespace plugin {
 
@@ -79,9 +81,10 @@ LoadCsvFileDialog::Parameters &LoadCsvFileDialog::Parameters::operator=(const Pa
   return *this;
 }
 
-LoadCsvFileDialog::LoadCsvFileDialog(QWidget *parent) :
+LoadCsvFileDialog::LoadCsvFileDialog(const QString &source, QWidget *parent) :
   QDialog(parent),
-  ui(new Ui::LoadCsvFileDialog)
+  ui(new Ui::LoadCsvFileDialog),
+  m_source(source)
 {
   ui->setupUi(this);
 
@@ -104,7 +107,16 @@ LoadCsvFileDialog::LoadCsvFileDialog(QWidget *parent) :
   connect(ui->qcbox_headerHandling, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this, &LoadCsvFileDialog::onHeaderHandlingChanged);
   connect(ui->qcb_multipleYcols, &QCheckBox::clicked, this, &LoadCsvFileDialog::onMultipleYColsClicked);
 
+  connect(ui->qcb_showPreview, &QCheckBox::clicked, this, &LoadCsvFileDialog::onShowPreviewClicked);
+
+  connect(ui->qcbox_encoding, static_cast<void (QComboBox::*)(int)>(&QComboBox::activated), this, &LoadCsvFileDialog::refreshPreview);
+  connect(ui->qspbox_numLinesPreview, static_cast<void (QSpinBox::*)(int)>(&QSpinBox::valueChanged), this, &LoadCsvFileDialog::refreshPreview);
+
+  ui->qpte_preview->setWordWrapMode(QTextOption::NoWrap);
+  ui->qpte_preview->setReadOnly(true);
+
   onMultipleYColsClicked();
+  updatePreview(false);
 }
 
 LoadCsvFileDialog::~LoadCsvFileDialog()
@@ -160,36 +172,37 @@ void LoadCsvFileDialog::onHeaderHandlingChanged(const int idx)
   }
 }
 
-void LoadCsvFileDialog::onLoadClicked()
+LoadCsvFileDialog::Parameters LoadCsvFileDialog::makeParameters()
 {
-  int linesToSkip;
   QStandardItem *item = m_encodingsModel.item(ui->qcbox_encoding->currentIndex());
-  if (item == nullptr) {
-    reject();
-    return;
-  }
+  if (item == nullptr)
+    throw std::runtime_error{"No item in encodingsModel"};
 
   QVariant v = ui->qcbox_headerHandling->currentData();
-
-  if (!v.canConvert<HeaderHandling>()) {
-    reject();
-    return;
-  }
+  if (!v.canConvert<HeaderHandling>())
+    throw std::runtime_error{"Invalid HeaderHandling"};
 
   HeaderHandling h = v.value<HeaderHandling>();
+  auto linesToSkip = ui->qspbox_linesToSkip->value();
 
-  linesToSkip = ui->qspbox_linesToSkip->value();
+  return Parameters(ui->qle_delimiter->text(),
+                    ui->qcbox_decimalSeparator->currentData().toChar(),
+                    ui->qspbox_xColumn->value(), ui->qspbox_yColumn->value(),
+                    ui->qcb_multipleYcols->checkState() == Qt::Checked,
+                    ui->qle_xType->text(), ui->qle_yType->text(),
+                    ui->qle_xUnit->text(), ui->qle_yUnit->text(),
+                    h, linesToSkip,
+                    item->data(Qt::UserRole + 1).toString());
+}
 
-  m_parameters = Parameters(ui->qle_delimiter->text(),
-                            ui->qcbox_decimalSeparator->currentData().toChar(),
-                            ui->qspbox_xColumn->value(), ui->qspbox_yColumn->value(),
-                            ui->qcb_multipleYcols->checkState() == Qt::Checked,
-                            ui->qle_xType->text(), ui->qle_yType->text(),
-                            ui->qle_xUnit->text(), ui->qle_yUnit->text(),
-                            h, linesToSkip,
-                            item->data(Qt::UserRole + 1).toString());
-
-  accept();
+void LoadCsvFileDialog::onLoadClicked()
+{
+  try {
+    m_parameters = makeParameters();
+    accept();
+  } catch (const std::runtime_error &) {
+    reject();
+  }
 }
 
 void LoadCsvFileDialog::onMultipleYColsClicked()
@@ -203,6 +216,67 @@ void LoadCsvFileDialog::onMultipleYColsClicked()
 LoadCsvFileDialog::Parameters LoadCsvFileDialog::parameters() const
 {
   return m_parameters;
+}
+
+void LoadCsvFileDialog::onShowPreviewClicked(const bool checked)
+{
+  updatePreview(checked);
+}
+
+void LoadCsvFileDialog::refreshPreview()
+{
+  if (!ui->qcb_showPreview->isChecked())
+    return;
+
+  try {
+    QStandardItem *item = m_encodingsModel.item(ui->qcbox_encoding->currentIndex());
+    if (item == nullptr)
+      throw std::runtime_error{"No item in encodingsModel"};
+    auto encId = item->data(Qt::UserRole + 1).toString();
+
+    auto lines = ui->qspbox_numLinesPreview->value();
+    auto ret = m_source.isEmpty()
+      ?
+      CsvFileLoader::previewClipboard(encId, lines)
+      :
+      CsvFileLoader::previewFile(m_source, encId, lines);
+
+    const auto &prev = ret.first;
+    const auto &err = ret.second;
+
+    if (!err.isEmpty()) {
+      ui->ql_previewError->setText(err);
+      ui->ql_previewError->setVisible(true);
+    } else {
+      ui->qpte_preview->setPlainText(prev);
+      ui->qpte_preview->setVisible(true);
+    }
+  } catch (const std::runtime_error &ex) {
+    const QString msg = QString{"Cannot display preview because parameters are invalid:\n%1"}.arg(ex.what());
+    ui->ql_previewError->setText(msg);
+    ui->ql_previewError->setVisible(true);
+  }
+}
+
+void LoadCsvFileDialog::setSource(const QString &path)
+{
+  m_source = path;
+}
+
+void LoadCsvFileDialog::updatePreview(const bool show)
+{
+  ui->ql_previewError->setVisible(false);
+  ui->qpte_preview->setVisible(false);
+
+  if (!show) {
+    ui->ql_numLinesPreview->setVisible(false);
+    ui->qspbox_numLinesPreview->setVisible(false);
+    return;
+  }
+
+  ui->ql_numLinesPreview->setVisible(true);
+  ui->qspbox_numLinesPreview->setVisible(true);
+  refreshPreview();
 }
 
 } // namespace backend

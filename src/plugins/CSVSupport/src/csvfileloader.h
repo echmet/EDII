@@ -119,6 +119,8 @@ public:
 
   CsvFileLoader() = delete;
 
+  static std::pair<QString, QString> previewClipboard(const QString &encodingId, const int maxLines);
+  static std::pair<QString, QString> previewFile(const QString &path, const QString &encodingId, const int maxLines);
   static DataPack readClipboard(UIPlugin *uiPlugin, const Parameters &params);
   static DataPack readFile(UIPlugin *uiPlugin, const QString &path, const Parameters &params);
 

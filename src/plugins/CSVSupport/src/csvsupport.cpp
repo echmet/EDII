@@ -1,10 +1,14 @@
+// vim: set sw=2 ts=2 sts=2 expandtab :
+
 #include "csvsupport.h"
 #include "csvfileloader.h"
 #include "loadcsvfiledialog.h"
+#include "csvutil.h"
 
 #include <QFileDialog>
 #include <plugins/pluginhelpers_p.h>
 #include <plugins/threadeddialog.h>
+#include <stdexcept>
 
 namespace plugin {
 
@@ -35,19 +39,24 @@ private:
 class LoadCsvFileThreadedDialog : public ThreadedDialog<LoadCsvFileDialog>
 {
 public:
-  LoadCsvFileThreadedDialog(UIPlugin *plugin) :
+  LoadCsvFileThreadedDialog(UIPlugin *plugin, const QString &source) :
     ThreadedDialog<LoadCsvFileDialog>{
       plugin,
-      []() {
-        auto dlg = new LoadCsvFileDialog{};
+      [this]() {
+        auto dlg = new LoadCsvFileDialog{this->m_source};
 
         for (const CsvFileLoader::Encoding &enc : CsvFileLoader::SUPPORTED_ENCODINGS)
           dlg->addEncoding(enc.name, enc.displayedName, enc.canHaveBom);
 
         return dlg;
       }
-    }
-  {}
+    },
+    m_source{source}
+  {
+  }
+
+private:
+  const QString m_source;
 };
 
 CSVSupport *CSVSupport::s_me{nullptr};
@@ -123,42 +132,22 @@ void appendCsvData(std::vector<Data> &data, CsvFileLoader::DataPack &csvData, co
 }
 
 static
-CsvFileLoader::Parameters makeCsvLoaderParameters(UIPlugin *plugin, LoadCsvFileThreadedDialog *dlg)
+CsvFileLoader::Parameters makeCsvLoaderParameters(const QString &path, UIPlugin *plugin, LoadCsvFileThreadedDialog *dlg)
 {
+  dlg->create();
+  dlg->dialog()->setSource(path);
+
   while (true) {
     int dlgRet = dlg->execute();
     if (dlgRet != QDialog::Accepted)
       return CsvFileLoader::Parameters();
 
-    auto _dlg = dlg->dialog();
-    const LoadCsvFileDialog::Parameters p = _dlg->parameters();
-
-    if (p.delimiter.length() != 1 && (p.delimiter.compare("\\t") != 0)) {
-      ThreadedDialog<QMessageBox>::displayWarning(plugin, QObject::tr("Invalid input"), QObject::tr("Delimiter must be a single character or '\\t' to represent TAB."));
+    try {
+      return dialogParamsToLoaderParams(dlg->dialog()->parameters());
+    } catch (const std::runtime_error &ex) {
+      ThreadedDialog<QMessageBox>::displayWarning(plugin, QObject::tr("Invalid input"), ex.what());
       continue;
     }
-    if (p.decimalSeparator == p.delimiter) {
-      ThreadedDialog<QMessageBox>::displayWarning(plugin, QObject::tr("Invalid input"), QObject::tr("Delimiter and decimal separator cannot be the same character."));
-      continue;
-    }
-
-    if (p.xColumn == p.yColumn) {
-      ThreadedDialog<QMessageBox>::displayWarning(plugin, QObject::tr("Invalid input"), QObject::tr("X and Y columns cannot be the same"));
-      continue;
-    }
-
-    QChar delimiter;
-    if (p.delimiter.compare("\\t") == 0)
-      delimiter = '\t';
-    else
-      delimiter = p.delimiter.at(0);
-
-    return CsvFileLoader::Parameters(delimiter, p.decimalSeparator,
-                                     p.xColumn, p.yColumn,
-                                     p.multipleYcols,
-                                     p.header != LoadCsvFileDialog::HeaderHandling::NO_HEADER,
-                                     p.linesToSkip,
-                                     p.encodingId);
   }
 }
 
@@ -169,7 +158,7 @@ EDIIPlugin::~EDIIPlugin()
 CSVSupport::CSVSupport(UIPlugin *plugin) :
   m_uiPlugin{plugin}
 {
-  m_paramsDlg = new LoadCsvFileThreadedDialog{m_uiPlugin};
+  m_paramsDlg = new LoadCsvFileThreadedDialog{m_uiPlugin, ""};
 }
 
 CSVSupport::~CSVSupport()
@@ -217,7 +206,7 @@ std::vector<Data> CSVSupport::loadCsvFromClipboard()
   std::vector<Data> retData{};
 
   while (true) {
-    CsvFileLoader::Parameters readerParams = makeCsvLoaderParameters(m_uiPlugin, m_paramsDlg);
+    CsvFileLoader::Parameters readerParams = makeCsvLoaderParameters("", m_uiPlugin, m_paramsDlg);
     if (!readerParams.isValid)
       break;
 
@@ -257,7 +246,7 @@ std::vector<Data> CSVSupport::loadCsvFromFileInternal(const QStringList &files)
   for (const QString &f : files) {
     while (true) {
       if (!readerParams.isValid) {
-        readerParams = makeCsvLoaderParameters(m_uiPlugin, m_paramsDlg);
+        readerParams = makeCsvLoaderParameters(f, m_uiPlugin, m_paramsDlg);
         if (!readerParams.isValid)
           break;
       }

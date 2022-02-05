@@ -48,15 +48,21 @@ public:
     Parameters &operator=(const Parameters &other);
   };
 
-  explicit LoadCsvFileDialog(QWidget *parent = nullptr);
+  explicit LoadCsvFileDialog(const QString &source = "", QWidget *parent = nullptr);
   ~LoadCsvFileDialog();
   void addEncoding(const QString &id, const QString &name, const bool canHaveBom);
   Parameters parameters() const;
+  void refreshPreview();
+  void setSource(const QString &path);
+  void updatePreview(const bool show);
 
 private:
+  Parameters makeParameters();
+
   Ui::LoadCsvFileDialog *ui;
   Parameters m_parameters;
   QStandardItemModel m_encodingsModel;
+  QString m_source;
 
   static const QString s_qlDelimiterToolTip;
   static const QString s_qlDecimalSeparatorToolTip;
@@ -67,6 +73,7 @@ private slots:
   void onHeaderHandlingChanged(const int idx);
   void onLoadClicked();
   void onMultipleYColsClicked();
+  void onShowPreviewClicked(const bool checked);
 };
 
 } // namespace plugin

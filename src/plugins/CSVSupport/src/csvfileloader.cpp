@@ -1,3 +1,5 @@
+// vim: set sw=2 ts=2 sts=2 expandtab :
+
 #include "csvfileloader.h"
 #include "malformedcsvfiledialog.h"
 
@@ -272,11 +274,11 @@ QByteArray extractLineUtf32(std::istream &stm)
 }
 
 static
-QStringList streamToLines(std::istream &stream, const CsvFileLoader::Encoding &encoding)
+QStringList streamToLines(std::istream &stream, const CsvFileLoader::Encoding &encoding, const int maxLines = -1)
 {
   QStringList lines;
 
-  QByteArray (*extractLine)(std::istream &);
+  QByteArray (*extractLine)(std::istream &) = nullptr;
 
   switch (encoding.type) {
   case CsvFileLoader::EncodingType::SingleByte:
@@ -325,6 +327,9 @@ QStringList streamToLines(std::istream &stream, const CsvFileLoader::Encoding &e
     if (stream.peek() != EOF || raw.size() > 0)
       lines.append(codec->toUnicode(raw));
     else
+      break;
+
+    if (maxLines > 0 && lines.length() == maxLines)
       break;
   }
 
@@ -433,7 +438,7 @@ CsvFileLoader::Parameters & CsvFileLoader::Parameters::operator=(const Parameter
   return *this;
 }
 
-static
+  static
 double readValue(const QString &s)
 {
   static QLocale cLoc(QLocale::C);
@@ -454,6 +459,45 @@ void sanitizeDecSep(QString &s, const QChar &sep)
     throw InvalidSeparatorError();
 
   s.replace(sep, '.');
+}
+
+static
+void skipBom(std::ifstream &stream, const CsvFileLoader::Encoding &encoding)
+{
+  /* Check and skip BOM */
+  const auto &bom = encoding.bom;
+
+  if (!bom.isEmpty()) {
+    const size_t sz = bom.size();
+    const auto buf = std::unique_ptr<char[]>(new char[sz]);
+    std::memset(buf.get(), 0, sz);
+
+    size_t ctr = 0;
+    for (; ctr < sz; ctr++) {
+      const auto b = stream.get();
+      if (b == EOF)
+        break;
+      buf[ctr] = b;
+    }
+
+    if (std::memcmp(buf.get(), bom.data(), bom.size())) {
+      stream.clear();
+      stream.seekg(0, stream.beg);
+    }
+  }
+}
+
+static
+std::ifstream tryOpenStream(const QString &path)
+{
+#if WIN32
+  auto natPath = toNativeCodepage(path.toUtf8().data());
+      ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot open file"), ex.what());
+      return std::unique_ptr<char[]>(nullptr);
+  return std::ifstream{natPath.get(), std::ios::binary};
+#else
+  return std::ifstream{path.toUtf8().data(), std::ios::binary};
+#endif // WIN32
 }
 
 class MalformedCsvFileThreadedDialog : public ThreadedDialog<MalformedCsvFileDialog>
@@ -497,23 +541,81 @@ CsvFileLoader::DataPack CsvFileLoader::readClipboard(UIPlugin *uiPlugin, const P
                     params.multipleYcols, params.hasHeader, params.linesToSkip, "<clipboard>");
 }
 
+std::pair<QString, QString> CsvFileLoader::previewClipboard(const QString &encodingId, int maxLines)
+{
+  QString clipboardText = QApplication::clipboard()->text();
+  std::istringstream stream(clipboardText.toStdString());
+
+  assert(SUPPORTED_ENCODINGS.contains(encodingId));
+  const auto &encoding = SUPPORTED_ENCODINGS[encodingId];
+
+  try {
+    auto lines = streamToLines(stream, encoding, maxLines);
+    QString preview{};
+    for (const auto &l: lines)
+      preview += l + "\n";
+
+    return {preview, ""};
+  } catch (const std::runtime_error &ex) {
+    return {
+      "",
+      QString{
+        "Clipboard content does not look like text. Make sure that you are trying to load the correct file "
+        "and try to set a different encoding.\n%1"
+      }.arg(ex.what())
+    };
+  }
+
+}
+
+std::pair<QString, QString> CsvFileLoader::previewFile(const QString &path, const QString &encodingId, int maxLines)
+{
+  if (maxLines < 1)
+    return {"", "Number of maximum lines to read must be positive"};
+
+  std::ifstream stream{};
+  try  {
+    stream = tryOpenStream(path);
+  } catch (const std::runtime_error &ex) {
+    return {"", "Cannot open file for reading"};
+  }
+
+  if (!stream.is_open())
+    return {"", "Cannot open file for reading"};
+
+  assert(SUPPORTED_ENCODINGS.contains(encodingId));
+  const auto &encoding = SUPPORTED_ENCODINGS[encodingId];
+
+  skipBom(stream, encoding);
+
+  try {
+    auto lines = streamToLines(stream, encoding, maxLines);
+
+    QString preview{};
+    for (const auto &l : lines)
+      preview += l + "\n";
+
+    return {preview, ""};
+  } catch (const std::runtime_error &ex) {
+    return {
+      "",
+      QString{
+        "File does not look like text. Make sure that you are trying to load the correct file "
+        "and try to set a different encoding.\n%1"
+      }.arg(ex.what())
+    };
+  }
+}
+
 CsvFileLoader::DataPack CsvFileLoader::readFile(UIPlugin *uiPlugin, const QString &path, const Parameters &params)
 {
-#if WIN32
-  auto natPath = [&]() {
-    try {
-      return toNativeCodepage(path.toUtf8().data());
-    } catch (const std::runtime_error &ex) {
-      ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot open file"), ex.what());
-      return std::unique_ptr<char[]>(nullptr);
-    }
-  }();
-  if (natPath == nullptr)
+  std::ifstream stream{};
+  try  {
+    stream = tryOpenStream(path);
+  } catch (const std::runtime_error &ex) {
+    ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot open file"), ex.what());
     return{};
-  std::ifstream stream(natPath.get(), std::ios::binary);
-#else
-  std::ifstream stream(path.toUtf8().data(), std::ios::binary);
-#endif // WIN32
+  }
 
   if (!stream.is_open()) {
     ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot open file"), QString(QObject::tr("Cannot open the specified file for reading")));
@@ -523,27 +625,7 @@ CsvFileLoader::DataPack CsvFileLoader::readFile(UIPlugin *uiPlugin, const QStrin
   assert(SUPPORTED_ENCODINGS.contains(params.encodingId));
   const auto &encoding = SUPPORTED_ENCODINGS[params.encodingId];
 
-  /* Check and skip BOM */
-  const auto &bom = encoding.bom;
-
-  if (!bom.isEmpty()) {
-    const size_t sz = bom.size();
-    const auto buf = std::unique_ptr<char[]>(new char[sz]);
-    std::memset(buf.get(), 0, sz);
-
-    size_t ctr = 0;
-    for (; ctr < sz; ctr++) {
-      const auto b = stream.get();
-      if (b == EOF)
-        break;
-      buf[ctr] = b;
-    }
-
-    if (std::memcmp(buf.get(), bom.data(), bom.size())) {
-      stream.clear();
-      stream.seekg(0, stream.beg);
-    }
-  }
+  skipBom(stream, encoding);
 
   return readStream(uiPlugin, stream, encoding, params.delimiter, params.decimalSeparator, params.xColumn, params.yColumn,
                     params.multipleYcols, params.hasHeader, params.linesToSkip, QFileInfo(path).fileName());
