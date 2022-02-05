@@ -247,9 +247,11 @@ void LoadCsvFileDialog::refreshPreview()
     if (!err.isEmpty()) {
       ui->ql_previewError->setText(err);
       ui->ql_previewError->setVisible(true);
+      ui->qpte_preview->setVisible(false);
     } else {
       ui->qpte_preview->setPlainText(prev);
       ui->qpte_preview->setVisible(true);
+      ui->ql_previewError->setVisible(false);
     }
   } catch (const std::runtime_error &ex) {
     const QString msg = QString{"Cannot display preview because parameters are invalid:\n%1"}.arg(ex.what());

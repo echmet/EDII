@@ -342,6 +342,9 @@
        <property name="text">
         <string>&lt;PREV_ERR_PLACEHOLDER&gt;</string>
        </property>
+       <property name="wordWrap">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>

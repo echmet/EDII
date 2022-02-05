@@ -31,6 +31,7 @@
   #define IS_BIG_ENDIAN
 #endif
 
+#define MAX_LINE_BYTES 4096
 
 class InvalidCodePointError : public std::runtime_error {
 public:
@@ -114,7 +115,7 @@ QByteArray extractLineSingle(std::istream &stm)
 {
   QByteArray ba;
 
-  while (stm.peek() != EOF) {
+  while (stm.peek() != EOF && ba.size() < MAX_LINE_BYTES) {
     const auto b = stm.get();
     if (b != LF<false, char>::value && b != CR<false, char>::value) {
       ba.append(char(b));
@@ -147,7 +148,7 @@ QByteArray extractLineUtf8(std::istream &stm)
 {
   QByteArray ba;
 
-  while (stm.peek() != EOF) {
+  while (stm.peek() != EOF && ba.size() < MAX_LINE_BYTES) {
     const auto ch = stm.get();
     if (ch == 0xC0) {
       ba.append(char(ch));
@@ -189,7 +190,7 @@ QByteArray extractLineUtf16(std::istream &stm)
   QByteArray ba;
 
   Utf16Char ch;
-  while (stm.peek() != EOF) {
+  while (stm.peek() != EOF && ba.size() < MAX_LINE_BYTES) {
     stm.read(ch.bytes, 2);
     if (stm.eof())
       throw InvalidCodePointError();
@@ -242,7 +243,7 @@ QByteArray extractLineUtf32(std::istream &stm)
   QByteArray ba;
 
   Utf32Char ch;
-  while (stm.peek() != EOF) {
+  while (stm.peek() != EOF && ba.size() < MAX_LINE_BYTES) {
     stm.read(ch.bytes, 4);
     if (stm.eof())
       throw InvalidCodePointError();
@@ -324,6 +325,8 @@ QStringList streamToLines(std::istream &stream, const CsvFileLoader::Encoding &e
 
   while (true) {
     auto raw = extractLine(stream);
+    if (raw.size() > MAX_LINE_BYTES)
+      throw std::runtime_error{"Line is too long"};
     if (stream.peek() != EOF || raw.size() > 0)
       lines.append(codec->toUnicode(raw));
     else
