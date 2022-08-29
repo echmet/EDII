@@ -2,9 +2,9 @@
 #define CSVSUPPORT_H
 
 #include <plugins/plugininterface.h>
-#include "csvsupport_global.h"
+#include <QStringList>
 
-class QStringList;
+#include "csvsupport_global.h"
 
 namespace plugin {
 

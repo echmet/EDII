@@ -96,7 +96,7 @@ QVariant ChemStationFileInfoModel::data(const QModelIndex &index, int role) cons
       return QVariant();
     }
     break;
-  case Qt::TextColorRole:
+  case Qt::ForegroundRole:
     {
       QPalette palette;
       if (m_entries.at(index.row()).isChFile)

@@ -1,43 +1,29 @@
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
 
-if (CMAKE_MAJOR_VERSION LESS 3)
-    project(libNetCDFSupport)
-else ()
-    project(libNetCDFSupport LANGUAGES CXX)
-endif ()
+project(libNetCDFSupport LANGUAGES CXX)
 
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+qt_standard_project_setup()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Widgets REQUIRED)
-
 add_definitions("-DNETCDFSUPPORT_LIBRARY")
+
+find_library(LIBNETCDF netcdf PATHS "${LIBNETCDF_DIR}/lib" REQUIRED)
 
 set(NetCDFSupport_SRCS
     src/netcdfsupport.cpp
     src/netcdffileloader.cpp)
 
-set(CMAKE_CXX_FLAGS
-    ${CMAKE_CXX_FLAGS}
-    ${Qt5Core_EXECUTABLE_COMPILE_FLAGS}
-    ${Qt5Gui_EXECUTABLE_COMPILE_FLAGS}
-    ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS})
-
-include_directories("${Qt5Core_INCLUDE_DIRS}"
-                    "${Qt5Widgets_INCLUDE_DIRS}"
-                    "${LIBNETCDF_DIR}/include")
+include_directories("${LIBNETCDF_DIR}/include")
 
 link_directories(${LINK_DIRECTORIES} "${LIBNETCDF_DIR}/lib")
 
 set(NetCDFSupport_LINK_LIBS
-    PRIVATE Qt5::Core
-    PRIVATE Qt5::Gui
-    PRIVATE Qt5::Widgets
-    PRIVATE netcdf)
+    PRIVATE Qt6::Core
+    PRIVATE Qt6::Gui
+    PRIVATE Qt6::Widgets
+    PRIVATE ${LIBNETCDF})
 
 add_library(NetCDFSupport SHARED ${NetCDFSupport_SRCS})
 set_target_properties(NetCDFSupport

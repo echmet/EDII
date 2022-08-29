@@ -9,8 +9,8 @@
 #include <QFileInfo>
 #include <QLocale>
 #include <QMessageBox>
-#include <QTextCodec>
 #include <QtGlobal>
+#include <QStringConverter>
 #include <plugins/threadeddialog.h>
 
 #include <cstring>
@@ -320,15 +320,16 @@ QStringList streamToLines(std::istream &stream, const CsvFileLoader::Encoding &e
 
   assert(extractLine);
 
-  auto codec = QTextCodec::codecForName(encoding.name.toUtf8().data());
-  assert(codec);
+  auto enc = QStringConverter::encodingForName(encoding.name.toUtf8().data());
+  assert(enc.has_value());
+  auto codec = QStringDecoder(enc.value());
 
   while (true) {
     auto raw = extractLine(stream);
     if (raw.size() > MAX_LINE_BYTES)
       throw std::runtime_error{"Line is too long"};
     if (stream.peek() != EOF || raw.size() > 0)
-      lines.append(codec->toUnicode(raw));
+      lines.append(codec.decode(raw));
     else
       break;
 
@@ -340,10 +341,6 @@ QStringList streamToLines(std::istream &stream, const CsvFileLoader::Encoding &e
 }
 
 const QMap<QString, CsvFileLoader::Encoding> CsvFileLoader::SUPPORTED_ENCODINGS = { { "ISO-8859-1", CsvFileLoader::Encoding("ISO-8859-1", QByteArray(), "ISO-8859-1 (Latin 1)", CsvFileLoader::EncodingType::SingleByte) },
-                                                                                    { "ISO-8859-2", CsvFileLoader::Encoding("ISO-8859-2", QByteArray(), "ISO-8859-2 (Latin 2)", CsvFileLoader::EncodingType::SingleByte) },
-                                                                                    { "windows-1250", CsvFileLoader::Encoding("windows-1250", QByteArray(), "Windows-1250 (cp1250)", CsvFileLoader::EncodingType::SingleByte) },
-                                                                                    { "windows-1251", CsvFileLoader::Encoding("windows-1251", QByteArray(), "Windows-1251 (cp1251)", CsvFileLoader::EncodingType::SingleByte) },
-                                                                                    { "windows-1252", CsvFileLoader::Encoding("windows-1252", QByteArray(), "Windows-1252 (cp1252)", CsvFileLoader::EncodingType::SingleByte) },
                                                                                     { "UTF-8", CsvFileLoader::Encoding("UTF-8", QByteArray("\xEF\xBB\xBF", 3), "UTF-8", CsvFileLoader::EncodingType::UTF8) },
                                                                                     { "UTF-16LE", CsvFileLoader::Encoding("UTF-16LE", QByteArray("\xFF\xFE", 2), "UTF-16LE (Little Endian)", CsvFileLoader::EncodingType::UTF16LE) },
                                                                                     { "UTF-16BE", CsvFileLoader::Encoding("UTF-16BE", QByteArray("\xFF\xFF", 2), "UTF-16BE (Big Endian)", CsvFileLoader::EncodingType::UTF16BE) },
