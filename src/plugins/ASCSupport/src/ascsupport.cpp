@@ -758,6 +758,7 @@ ASCSupport::~ASCSupport()
 void ASCSupport::destroy()
 {
   delete s_me;
+  s_me = nullptr;
 }
 
 const EntryHandler * ASCSupport::getHandler(const std::string &key)

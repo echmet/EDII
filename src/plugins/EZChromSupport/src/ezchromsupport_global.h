@@ -1,0 +1,14 @@
+// vim: sw=4 ts=4 sts=4 noexpandtab :
+
+#ifndef EZCHROMSUPPORT_GLOBAL_H
+#define EZCHROMSUPPORT_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(EZCHROMSUPPORT_LIBRARY)
+#  define EZCHROMSUPPORTSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define EZCHROMSUPPORTSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // EZCHROMSUPPORT_GLOBAL_H
