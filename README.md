@@ -13,7 +13,7 @@ EDII is shipped with the following plugins that allow import of the following da
 - Comma separated values (CSV) 
 - NetCDF (currently tested only with 32Karat output)
 
-Suported IPC interfaces
+Supported IPC interfaces
 ---
 - Local TCP socket (everywhere)
 - [D-Bus](https://www.freedesktop.org/wiki/Software/dbus/) (Linux)
@@ -35,6 +35,9 @@ Plugin dependencies
 #### ASCSupport
 - [ICU](http://site.icu-project.org/home)
 
+#### EZChromSupport
+- [EZFish](https://gitlab.com/madcatx/ezfish)
+
 Building
 ---
 EDII relies on the CMake build system to generate appropriate make or project files.
@@ -42,8 +45,9 @@ EDII relies on the CMake build system to generate appropriate make or project fi
 ### Build parameters
 - `-DEDII_PLUGIN_ENABLE_ASC=ON|OFF` - Whether to build ASCSupport plugin, defaults to `ON`
 - `-DEDII_PLUGIN_ENABLE_CSV=ON|OFF` - Whether to build CSVSupport plugin, defaults to `ON`
-- `-DEDII_PLUGIN_ENABLE_HPCS=ON|OFF` - Whether to build HPCSSuport plugin, defaults to `ON`
-- `-DEDII_PLUGIN_ENABLE_NETCDF=ON|OFF` - Whether to build NetCDFSuport plugin, defaults to `ON`
+- `-DEDII_PLUGIN_ENABLE_HPCS=ON|OFF` - Whether to build HPCSSupport plugin, defaults to `ON`
+- `-DEDII_PLUGIN_ENABLE_NETCDF=ON|OFF` - Whether to build NetCDFSupport plugin, defaults to `ON`
+- `-DEDII_PLUGIN_ENABLE_EZFISH=ON|OFF` - Whether to build EZChromSupport plugin, defaults to `ON`
 
 ### Build parameters of built-in plugins
 #### ASCSupport
@@ -54,6 +58,9 @@ EDII relies on the CMake build system to generate appropriate make or project fi
 
 #### NetCDFSupport
 - `-DLIBNETCDF_DIR=` Path to NetCDF installation if not available in system-wide directories
+
+#### EZChromSipport
+- `-DLIBEZFISH_DIR=` Path to EZFish installation if not available in system-wide directories
 
 <a name="Linux_UNIX"></a>
 #### Linux/UNIX
