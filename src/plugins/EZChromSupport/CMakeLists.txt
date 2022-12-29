@@ -6,17 +6,29 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+if (UNIX)
+    include(GNUInstallDirs)
+elseif (WIN32)
+    set(CMAKE_INSTALL_LIBDIR "lib")
+    set(CMAKE_INSTALL_INCLUDEDIR "include")
+    set(CMAKE_INSTALL_BINDIR "bin")
+endif ()
+
+set(LIBEZFISH_DIR
+    ""
+	CACHE
+	PATH
+	"Path to EZFish installation directory. Set only of EZFish is not installed system-wide"
+)
+
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
-
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 
-add_definitions("-DEZCHROM_SUPPORT")
+add_definitions("-DEZCHROMSUPPORT_LIBRARY")
 
-include_directories("${LIBEZFISH_DIR}/include")
-
-find_library(LIBEZFISH ezfish PATHS "${LIBEZFISH_DIR}/lib")
+include_directories("${LIBEZFISH_DIR}/${CMAKE_INSTALL_INCLUDEDIR}")
 
 set(EZChromSupport_SRCS
     src/ezchromsupport.cpp
@@ -26,9 +38,9 @@ set(EZChromSupport_LINK_LIBS
     PRIVATE Qt5::Core
     PRIVATE Qt5::Gui
     PRIVATE Qt5::Widgets
-    PRIVATE ${LIBEZFISH})
+    PRIVATE ezfish)
 
-link_directories(${LINK_DIRECTORIES} "${LIBEZFISH_DIR}/lib")
+link_directories(${LINK_DIRECTORIES} "${LIBEZFISH_DIR}/${CMAKE_INSTALL_LIBDIR}")
 
 if (WIN32)
     set(EZChromSupport_LINK_LIBS

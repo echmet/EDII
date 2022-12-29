@@ -495,8 +495,6 @@ std::ifstream tryOpenStream(const QString &path)
 {
 #if WIN32
   auto natPath = toNativeCodepage(path.toUtf8().data());
-      ThreadedDialog<QMessageBox>::displayWarning(uiPlugin, QObject::tr("Cannot open file"), ex.what());
-      return std::unique_ptr<char[]>(nullptr);
   return std::ifstream{natPath.get(), std::ios::binary};
 #else
   return std::ifstream{path.toUtf8().data(), std::ios::binary};
