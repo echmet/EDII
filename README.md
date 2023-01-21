@@ -12,6 +12,7 @@ EDII is shipped with the following plugins that allow import of the following da
 - ASC text file (Beckman-Coulter 32Karat, EZChrom)
 - Comma separated values (CSV) 
 - NetCDF (currently tested only with 32Karat output)
+- 32Karat, EZChrom native .dat files
 
 Supported IPC interfaces
 ---
