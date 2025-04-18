@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 project(libEZChromSupport LANGUAGES CXX)
 
@@ -24,7 +24,7 @@ set(LIBEZFISH_DIR
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
-find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
 
 add_definitions("-DEZCHROMSUPPORT_LIBRARY")
 
@@ -35,9 +35,9 @@ set(EZChromSupport_SRCS
     src/ui/selectchannelsdialog.cpp)
 
 set(EZChromSupport_LINK_LIBS
-    PRIVATE Qt5::Core
-    PRIVATE Qt5::Gui
-    PRIVATE Qt5::Widgets
+    PRIVATE Qt6::Core
+    PRIVATE Qt6::Gui
+    PRIVATE Qt6::Widgets
     PRIVATE ezfish)
 
 link_directories(${LINK_DIRECTORIES} "${LIBEZFISH_DIR}/${CMAKE_INSTALL_LIBDIR}")

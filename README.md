@@ -3,7 +3,7 @@ ECHMET Data Import Infrastructure
 
 Introduction
 ---
-ECHMET Data Import Infrastructure (EDII) is a pluginable framework for import of chromatographic and electrophoretic experimental data from various sources. It is designed to run as a separate background service. Communication with other software is accomplished via IPC interfaces. Pluginable architecture allows for easy addition of support for new data formats. Individual plugins may use Qt5 toolkit to provide GUI interface. 
+ECHMET Data Import Infrastructure (EDII) is a pluginable framework for import of chromatographic and electrophoretic experimental data from various sources. It is designed to run as a separate background service. Communication with other software is accomplished via IPC interfaces. Pluginable architecture allows for easy addition of support for new data formats. Individual plugins may use Qt6 toolkit to provide GUI interface. 
 
 Supported data formats through built-in plugins
 ---
@@ -22,7 +22,7 @@ Supported IPC interfaces
 Dependencies
 ---
 EDII depends on the following toolkits and libraries in order to be built and run
-- [Qt 5 toolkit](https://www.qt.io/)
+- [Qt 6 toolkit](https://www.qt.io/)
 - [CMake](https://cmake.org/)
 
 Plugin dependencies
@@ -73,7 +73,7 @@ EDII relies on the CMake build system to generate appropriate make or project fi
 	make
 
 #### Windows
-Use `CMake-gui` tool to set up the project and generate project files for your compiler of choice. Keep in  mind that since Qt5 exports C++ objects, EDII must be built with the same compiler that was used to build your Qt5 toolkit. Refer to the [Linux/UNIX](#Linux_UNIX) section of this README for details how to set up paths for the required dependencies.
+Use `CMake-gui` tool to set up the project and generate project files for your compiler of choice. Keep in  mind that since Qt6 exports C++ objects, EDII must be built with the same compiler that was used to build your Qt6 toolkit. Refer to the [Linux/UNIX](#Linux_UNIX) section of this README for details how to set up paths for the required dependencies.
 
 
 Writing custom plugins

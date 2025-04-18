@@ -1,19 +1,14 @@
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-if (CMAKE_MAJOR_VERSION LESS 3)
-    project(libHPCSSupport)
-else ()
-    project(libHPCSSupport LANGUAGES CXX)
-endif ()
+project(libHPCSSupport LANGUAGES CXX)
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Widgets REQUIRED)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets)
+qt_standard_project_setup()
 
 add_definitions("-DHPCSSUPPORT_LIBRARY")
 
@@ -26,15 +21,12 @@ set(HPCSSupport_SRCS
     src/loadchemstationdatadialog.cpp)
 
 set(CMAKE_CXX_FLAGS
-    ${CMAKE_CXX_FLAGS}
-    ${Qt5Core_EXECUTABLE_COMPILE_FLAGS}
-    ${Qt5Gui_EXECUTABLE_COMPILE_FLAGS}
-    ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS})
+    ${CMAKE_CXX_FLAGS})
 
 set(HPCSSupport_LINK_LIBS
-    PRIVATE Qt5::Core
-    PRIVATE Qt5::Gui
-    PRIVATE Qt5::Widgets
+    PRIVATE Qt6::Core
+    PRIVATE Qt6::Gui
+    PRIVATE Qt6::Widgets
     PRIVATE HPCS)
 
 include_directories("${LIBHPCS_DIR}/include")

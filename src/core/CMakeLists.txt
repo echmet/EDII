@@ -1,17 +1,9 @@
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-if (CMAKE_MAJOR_VERSION LESS 3)
-    project(EDIICore LANGUAGES)
-else ()
-    project(EDIICore LANGUAGES CXX)
-endif ()
+project(EDIICore LANGUAGES CXX)
 
-set(CMAKE_AUTOMOC ON)
-
-find_package(Qt5Core REQUIRED)
-find_package(Qt5Gui REQUIRED)
-find_package(Qt5Widgets REQUIRED)
-find_package(Qt5Network)
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets Network)
+qt_standard_project_setup()
 
 include_directories(${INCLUDE_DIRECTORIES}
 	            "${CMAKE_CURRENT_SOURCE_DIR}/dbus")
@@ -31,39 +23,35 @@ if (ECHMET_EDII_USE_DBUS)
 endif ()
 
 set(EDIICore_LINK_LIBS
-    PRIVATE Qt5::Core
-    PRIVATE Qt5::Gui
-    PRIVATE Qt5::Widgets
-    PRIVATE Qt5::Network)
+    PRIVATE Qt6::Core
+    PRIVATE Qt6::Gui
+    PRIVATE Qt6::Widgets
+    PRIVATE Qt6::Network)
 
 set(CMAKE_CXX_FLAGS
-    ${CMAKE_CXX_FLAGS}
-    ${Qt5Core_EXECUTABLE_COMPILE_FLAGS}
-    ${Qt5Gui_EXECUTABLE_COMPILE_FLAGS}
-    ${Qt5Widgets_EXECUTABLE_COMPILE_FLAGS}
-    ${Qt5Network_EXECUTABLE_COMPILE_FLAGS})
+    ${CMAKE_CXX_FLAGS})
 
 
 if (ECHMET_EDII_USE_DBUS)
     add_definitions("-DECHMET_EDII_IPCINTERFACE_QTDBUS_ENABLED")
-    find_package(Qt5DBus REQUIRED)
+    find_package(Qt6DBus REQUIRED)
 
     set(EDIICore_SRCS
 	${EDIICore_SRCS}
-	src/dbus/dbusinterface.cpp
-	src/dbus/DBusInterfaceAdaptor.cpp
-	src/dbus/DBusInterfaceInterface.cpp)
+        src/dbus/dbusinterface.cpp
+        src/dbus/DBusInterfaceAdaptor.cpp
+        src/dbus/DBusInterfaceInterface.cpp)
 
     set(EDIICore_LINK_LIBS
-	${EDIICore_LINK_LIBS}
-	Qt5::DBus)
+        ${EDIICore_LINK_LIBS}
+        Qt6::DBus)
 
     set(CMAKE_CXX_FLAGS
-	${CMAKE_CXX_FLAGS}
-        ${Qt5DBus_EXECUTABLE_COMPILE_FLAGS})
+        ${CMAKE_CXX_FLAGS}
+        ${Qt6DBus_EXECUTABLE_COMPILE_FLAGS})
 endif ()
 
-qt5_wrap_cpp(EDIICore_MOCS ../../include/plugins/uiplugin.h)
+qt6_wrap_cpp(EDIICore_MOCS ../../include/plugins/uiplugin.h)
 
 add_executable(EDIICore ${EDIICore_SRCS} ${EDIICore_MOCS})
 set_target_properties(EDIICore

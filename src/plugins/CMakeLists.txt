@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 option(EDII_PLUGIN_ENABLE_ASC "Enable plugin to load ASC files" ON)
 option(EDII_PLUGIN_ENABLE_CSV "Enable plugin to load CSV files" ON)

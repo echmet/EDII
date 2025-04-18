@@ -4,8 +4,6 @@
 #include <plugins/plugininterface.h>
 #include "csvsupport_global.h"
 
-class QStringList;
-
 namespace plugin {
 
 class LoadCsvFileThreadedDialog;

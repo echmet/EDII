@@ -9,8 +9,8 @@
 #include <QFileInfo>
 #include <QLocale>
 #include <QMessageBox>
-#include <QTextCodec>
 #include <QtGlobal>
+#include <QStringConverter>
 #include <plugins/threadeddialog.h>
 
 #include <cstring>
@@ -320,15 +320,16 @@ QStringList streamToLines(std::istream &stream, const CsvFileLoader::Encoding &e
 
   assert(extractLine);
 
-  auto codec = QTextCodec::codecForName(encoding.name.toUtf8().data());
-  assert(codec);
+  QStringDecoder decoder{encoding.name};
+  if (!decoder.isValid())
+    throw new std::runtime_error{"Text decoder is not in a valid state. Requested character encoding might not be supported by your Qt libraries"};
 
   while (true) {
     auto raw = extractLine(stream);
     if (raw.size() > MAX_LINE_BYTES)
       throw std::runtime_error{"Line is too long"};
     if (stream.peek() != EOF || raw.size() > 0)
-      lines.append(codec->toUnicode(raw));
+      lines.append(decoder.decode(raw));
     else
       break;
 
